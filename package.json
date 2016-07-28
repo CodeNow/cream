@@ -1,0 +1,65 @@
+{
+  "name": "cream",
+  "version": "1.0.0",
+  "description": "Payments microservice for Runnable",
+  "main": "index.js",
+  "scripts": {
+    "lint": "standard --verbose",
+    "test": "npm run lint && NODE_PATH=./lib NODE_ENV=test mocha --recursive test/",
+    "coverage": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha -- --recursive test",
+    "coverage-unit": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-unit -- --recursive test/unit",
+    "coverage-functional": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-functional -- --recursive test/functional",
+    "coverage-integration": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-integration -- --recursive test/integration",
+    "coverage-check": "istanbul check-coverage && echo 'Coverage check successful!'",
+    "test-unit": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/unit/",
+    "test-functional": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/functional/",
+    "test-integration": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
+    "start-worker": "npm run migrate-dev && NODE_PATH=./lib node lib/workers",
+    "start-http": "npm run migrate-dev && NODE_PATH=./lib node lib/http"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeNow/CREAM.git"
+  },
+  "author": "",
+  "directories": {
+    "test": "test"
+  },
+  "engines": {
+    "node": ">=4.4.5 <5",
+    "npm": ">=2.14.7"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "it",
+      "before",
+      "after",
+      "beforeEach",
+      "afterEach"
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/CodeNow/CREAM/issues"
+  },
+  "homepage": "https://github.com/CodeNow/CREAM#readme",
+  "dependencies": {
+    "101": "^1.6.1",
+    "bluebird": "^3.4.1",
+    "body-parser": "^1.15.2",
+    "bunyan": "^1.8.1",
+    "express": "^4.14.0",
+    "joi": "^9.0.4",
+    "loadenv": "^2.2.0",
+    "ponos": "^4.2.1",
+    "stripe": "^4.9.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "istanbul": "^0.4.4",
+    "mocha": "^2.5.3",
+    "sinon": "^1.17.5",
+    "sinon-as-promised": "^4.0.2",
+    "standard": "^7.1.2"
+  }
+}
