@@ -228,22 +228,4 @@ describe('RabbitMQ', () => {
       )
     })
   })
-
-  describe('publishCheckForAlmostInactiveOrganizations', () => {
-    let validJob
-
-    beforeEach(() => {
-      validJob = {}
-    })
-
-    it('should publish the task', () => {
-      rabbitMQ.publishCheckForAlmostInactiveOrganizations(validJob)
-      sinon.assert.calledOnce(publishTaskStub)
-      sinon.assert.calledWithExactly(
-        publishTaskStub,
-        'organization.plan.almost-inactive.check',
-        validJob
-      )
-    })
-  })
 })
