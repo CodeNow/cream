@@ -32,7 +32,9 @@
   "standard": {
     "globals": [
       "describe",
+      "xdescribe",
       "it",
+      "xit",
       "before",
       "after",
       "beforeEach",
