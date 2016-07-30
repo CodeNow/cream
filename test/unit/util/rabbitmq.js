@@ -83,7 +83,53 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('publishInvoicePaymentSucceeded', () => {
+  describe('#publishProcessInvoice', () => {
+    let stripeCustomerId
+    let validJob
+
+    beforeEach(() => {
+      stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
+      validJob = { stripeCustomerId: stripeCustomerId }
+    })
+
+    describe('Validation', () => {
+      it('shoud required a `githubId` property', done => {
+        rabbitMQ.publishProcessInvoice({ notStripeCustomerId: 23423 })
+          .asCallback(err => {
+            expect(err).to.exist
+            expect(err.message).to.match(/stripeCustomerId/i)
+            done()
+          })
+      })
+
+      it('shoud required the `githubId` property to be a number', done => {
+        rabbitMQ.publishProcessInvoice({ stripeCustomerId: false })
+          .asCallback(err => {
+            expect(err).to.exist
+            expect(err.message).to.match(/stripeCustomerId/i)
+            done()
+          })
+      })
+
+      it('should resolve promise if job is valid', () => {
+        return rabbitMQ.publishProcessInvoice(validJob)
+      })
+    })
+
+    it('should publish the task', () => {
+      return rabbitMQ.publishProcessInvoice(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(publishTaskStub)
+          sinon.assert.calledWithExactly(
+            publishTaskStub,
+            'organization.invoice.process',
+            validJob
+          )
+        })
+    })
+  })
+
+  describe('#publishInvoicePaymentSucceeded', () => {
     let stripeCustomerId
     let validJob
 
@@ -129,7 +175,7 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('publishInvoicePaymentFailed', () => {
+  describe('#publishInvoicePaymentFailed', () => {
     let stripeCustomerId
     let validJob
 
@@ -175,7 +221,7 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('publishCheckForAlmostExpiredOrganizations', () => {
+  describe('#publishCheckForAlmostExpiredOrganizations', () => {
     let validJob
 
     beforeEach(() => {
@@ -193,7 +239,7 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('publishCheckForExpiredOrganizations', () => {
+  describe('#publishCheckForExpiredOrganizations', () => {
     let validJob
 
     beforeEach(() => {
@@ -211,7 +257,7 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('publishCheckForOrganizationPaymentHaveFailed', () => {
+  describe('#publishCheckForOrganizationPaymentHaveFailed', () => {
     let validJob
 
     beforeEach(() => {
