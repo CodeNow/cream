@@ -14,8 +14,8 @@
     "test-unit": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/unit/",
     "test-functional": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/functional/",
     "test-integration": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
-    "start-worker": "npm run migrate-dev && NODE_PATH=./lib node lib/workers",
-    "start-http": "npm run migrate-dev && NODE_PATH=./lib node lib/http"
+    "start-worker": "NODE_PATH=./lib node lib/workers",
+    "start-http": "NODE_PATH=./lib node lib/http"
   },
   "repository": {
     "type": "git",
