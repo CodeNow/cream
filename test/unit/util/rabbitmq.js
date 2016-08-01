@@ -83,7 +83,7 @@ describe('RabbitMQ', () => {
     })
   })
 
-  describe('#publishProcessInvoice', () => {
+  describe('#publishInvoiceCreated', () => {
     let stripeCustomerId
     let validJob
 
@@ -94,7 +94,7 @@ describe('RabbitMQ', () => {
 
     describe('Validation', () => {
       it('shoud required a `githubId` property', done => {
-        rabbitMQ.publishProcessInvoice({ notStripeCustomerId: 23423 })
+        rabbitMQ.publishInvoiceCreated({ notStripeCustomerId: 23423 })
           .asCallback(err => {
             expect(err).to.exist
             expect(err.message).to.match(/stripeCustomerId/i)
@@ -103,7 +103,7 @@ describe('RabbitMQ', () => {
       })
 
       it('shoud required the `githubId` property to be a number', done => {
-        rabbitMQ.publishProcessInvoice({ stripeCustomerId: false })
+        rabbitMQ.publishInvoiceCreated({ stripeCustomerId: false })
           .asCallback(err => {
             expect(err).to.exist
             expect(err.message).to.match(/stripeCustomerId/i)
@@ -112,17 +112,17 @@ describe('RabbitMQ', () => {
       })
 
       it('should resolve promise if job is valid', () => {
-        return rabbitMQ.publishProcessInvoice(validJob)
+        return rabbitMQ.publishInvoiceCreated(validJob)
       })
     })
 
     it('should publish the task', () => {
-      return rabbitMQ.publishProcessInvoice(validJob)
+      return rabbitMQ.publishInvoiceCreated(validJob)
         .then(() => {
           sinon.assert.calledOnce(publishTaskStub)
           sinon.assert.calledWithExactly(
             publishTaskStub,
-            'organization.invoice.process',
+            'stripe.invoice.created',
             validJob
           )
         })
@@ -168,7 +168,7 @@ describe('RabbitMQ', () => {
           sinon.assert.calledOnce(publishTaskStub)
           sinon.assert.calledWithExactly(
             publishTaskStub,
-            'organization.invoice.payment-succeeded',
+            'stripe.invoice.payment-succeeded',
             validJob
           )
         })
@@ -214,7 +214,7 @@ describe('RabbitMQ', () => {
           sinon.assert.calledOnce(publishTaskStub)
           sinon.assert.calledWithExactly(
             publishTaskStub,
-            'organization.invoice.payment-failed',
+            'stripe.invoice.payment-failed',
             validJob
           )
         })
@@ -233,7 +233,7 @@ describe('RabbitMQ', () => {
       sinon.assert.calledOnce(publishTaskStub)
       sinon.assert.calledWithExactly(
         publishTaskStub,
-        'organization.plan.trial-almost-expired.check',
+        'organizations.plan.trial-almost-expired.check',
         validJob
       )
     })
@@ -251,7 +251,7 @@ describe('RabbitMQ', () => {
       sinon.assert.calledOnce(publishTaskStub)
       sinon.assert.calledWithExactly(
         publishTaskStub,
-        'organization.plan.trial-expired.check',
+        'organizations.plan.trial-expired.check',
         validJob
       )
     })
@@ -269,7 +269,7 @@ describe('RabbitMQ', () => {
       sinon.assert.calledOnce(publishTaskStub)
       sinon.assert.calledWithExactly(
         publishTaskStub,
-        'organization.plan.payment-failed.check',
+        'organizations.plan.payment-failed.check',
         validJob
       )
     })

@@ -4,9 +4,9 @@ const expect = require('chai').expect
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CheckInvoicedPaymentFailed = require('workers/organization.invoice.payment-failed.check')
+const CheckInvoicedPaymentFailed = require('workers/organizations.invoice.payment-failed.check')
 
-describe('#organization.invoice.payment-failed.check', () => {
+describe('#organizations.invoice.payment-failed.check', () => {
   let validJob
 
   beforeEach(() => {

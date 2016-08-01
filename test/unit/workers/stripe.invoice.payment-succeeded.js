@@ -4,9 +4,9 @@ const expect = require('chai').expect
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const ProcessPaymentSucceeded = require('workers/organization.invoice.payment-succeeded')
+const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded')
 
-describe('#organization.invoice.payment-succeeded', () => {
+describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'

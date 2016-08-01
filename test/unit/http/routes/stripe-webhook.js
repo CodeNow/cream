@@ -32,7 +32,7 @@ describe('HTTP /stripe', () => {
     let requestMock
     let stripeEventMock
     let retrieveEventStub
-    let publishProcessInvoiceStub
+    let publishInvoiceCreatedStub
     let publishInvoicePaymentSucceededStub
     let publishInvoicePaymentFailedStub
     let eventId = 'evt_18cldF2eZvKYlo2CNJnJZq2b'
@@ -40,7 +40,7 @@ describe('HTTP /stripe', () => {
     beforeEach(() => {
       requestMock = { body: { id: eventId } }
       stripeEventMock = Object.assign({}, requestMock.body)
-      publishProcessInvoiceStub = sinon.stub(rabbitmq, 'publishProcessInvoice')
+      publishInvoiceCreatedStub = sinon.stub(rabbitmq, 'publishInvoiceCreated')
       publishInvoicePaymentSucceededStub = sinon.stub(rabbitmq, 'publishInvoicePaymentSucceeded')
       publishInvoicePaymentFailedStub = sinon.stub(rabbitmq, 'publishInvoicePaymentFailed')
       retrieveEventStub = sinon.stub(stripe.events, 'retrieve').yieldsAsync(null, stripeEventMock)
@@ -48,7 +48,7 @@ describe('HTTP /stripe', () => {
 
     afterEach(() => {
       retrieveEventStub.restore()
-      publishProcessInvoiceStub.restore()
+      publishInvoiceCreatedStub.restore()
       publishInvoicePaymentSucceededStub.restore()
       publishInvoicePaymentFailedStub.restore()
     })
@@ -61,12 +61,12 @@ describe('HTTP /stripe', () => {
         })
     })
 
-    it('should enqueue a `publishProcessInvoice` job if a `invoice.created` event was received', () => {
+    it('should enqueue a `publishInvoiceCreated` job if a `invoice.created` event was received', () => {
       stripeEventMock.type = 'invoice.created'
       return StripeWebhookRouter.post(requestMock, responseStub)
         .then(() => {
-          sinon.assert.calledOnce(publishProcessInvoiceStub)
-          sinon.assert.calledWithExactly(publishProcessInvoiceStub, stripeEventMock)
+          sinon.assert.calledOnce(publishInvoiceCreatedStub)
+          sinon.assert.calledWithExactly(publishInvoiceCreatedStub, stripeEventMock)
           sinon.assert.calledOnce(responseStub.status)
           sinon.assert.calledWithExactly(responseStub.status, 200)
         })

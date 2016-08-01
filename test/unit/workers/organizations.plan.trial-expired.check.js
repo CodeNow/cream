@@ -4,9 +4,9 @@ const expect = require('chai').expect
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CheckForOrganizationsWithExpiredTrials = require('workers/organization.plan.trial-expired.check')
+const CheckForOrganizationsWithExpiredTrials = require('workers/organizations.plan.trial-expired.check')
 
-describe('#organization.plan.trial-expired.check', () => {
+describe('#organizations.plan.trial-expired.check', () => {
   let validJob
 
   beforeEach(() => {

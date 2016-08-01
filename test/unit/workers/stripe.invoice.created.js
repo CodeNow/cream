@@ -4,9 +4,9 @@ const expect = require('chai').expect
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const ProcessPaymentFailure = require('workers/organization.invoice.payment-failed')
+const ProcessInvoiceCreated = require('workers/stripe.invoice.created')
 
-describe('#organization.invoice.payment-failed', () => {
+describe('#stripe.invoice.created', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
@@ -17,7 +17,7 @@ describe('#organization.invoice.payment-failed', () => {
 
   describe('Validation', () => {
     it('should not validate if `tid` is not a uuid', done => {
-      ProcessPaymentFailure({ tid: 'world' })
+      ProcessInvoiceCreated({ tid: 'world' })
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
@@ -28,7 +28,7 @@ describe('#organization.invoice.payment-failed', () => {
     })
 
     it('should not validate if `stripeCustomerId` is not passed', done => {
-      ProcessPaymentFailure({ tid: tid })
+      ProcessInvoiceCreated({ tid: tid })
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
@@ -39,7 +39,7 @@ describe('#organization.invoice.payment-failed', () => {
     })
 
     it('should validate if a valid job is passed', () => {
-      return ProcessPaymentFailure(validJob)
+      return ProcessInvoiceCreated(validJob)
     })
   })
 
