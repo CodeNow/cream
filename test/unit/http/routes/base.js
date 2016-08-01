@@ -158,7 +158,6 @@ describe('HTTP Base Router', () => {
         }
       )
     })
-
   })
 })
 

@@ -16,7 +16,8 @@ describe('HTTP /stripe', () => {
 
   beforeEach(() => {
     responseStub = {
-      status: sinon.stub().returnsThis()
+      status: sinon.stub().returnsThis(),
+      send: sinon.stub().returnsThis()
     }
   })
 
