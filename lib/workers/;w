@@ -5,6 +5,8 @@ const Joi = Promise.promisifyAll(require('joi'))
 const keypather = require('keypather')()
 
 const logger = require('util/logger').child({ module: 'worker/organization.created' })
+const bigPoppa = require('util/big-poppa')
+const stripe = require('util/stripe')
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
@@ -14,8 +16,10 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
  */
 const jobSchema = Joi.object({
   tid: Joi.string().guid(),
-  organizationId: Joi.number().required() // big-poppa id
-}).unknown().required()
+  organizationId: Joi.number().required(), // big-poppa id
+  numberOfInstances: Joi.number(),
+  planId: Joi.string() // `runnable-basic`, `runnable-premium`, .etc
+}).or('numberOfInstances', 'planId').unknown().required()
 
 /**
  * Create an organization in Stripe
@@ -30,8 +34,8 @@ const jobSchema = Joi.object({
  * @param {Object}    job - job passed by RabbitMQ
  * @return {Promise}
  */
-module.exports = function CreateOrganizationInStripeAndStartTrial (job) {
-  const log = logger.child({ job: job, method: 'CreateOrganizationInStripeAndStartTrial' })
+module.exports = function CreateOrganizationInStripeAndStartTrial (rawJob) {
+  const log = logger.child({ job: rawJob, method: 'CreateOrganizationInStripeAndStartTrial' })
   log.info('CreateOrganizationInStripeAndStartTrial called')
   return Joi.validateAsync(rawJob, jobSchema)
     .then(function fetchOrgnization (job) {
@@ -49,7 +53,7 @@ module.exports = function CreateOrganizationInStripeAndStartTrial (job) {
             stripeCustomer: stripeCustomer,
             subscription: subscription
           }, 'Customer created in Stripe. Saving `stripeCustomerId`')
-          let trialEndTimestamp = subscription.trial_end
+          let trialEndTimestamp = keypather.get(stripeCustomer, 'subscriptions.data[0].trial_end')
           if (!trialEndTimestamp) {
             throw new WorkerStopError(
               `No 'trialEnd' specified for plan`
