@@ -48,7 +48,7 @@
   "dependencies": {
     "101": "^1.6.1",
     "@runnable/api-client": "^7.5.0",
-    "@runnable/big-poppa-client": "^0.1.0",
+    "@runnable/big-poppa-client": "^0.2.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "bunyan": "^1.8.1",
