@@ -6,6 +6,8 @@ node_js:
 env:
   global:
   - NODE_ENV=test
+before_install:
+  - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
 cache:
 - directories:
   - ./node_modules
