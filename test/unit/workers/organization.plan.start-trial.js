@@ -8,6 +8,7 @@ require('sinon-as-promised')(Promise)
 const bigPoppa = require('util/big-poppa')
 const stripe = require('util/stripe')
 
+const EntityExistsInStripeError = require('errors/entity-exists-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial')
@@ -19,18 +20,24 @@ describe('#organization.plan.start-trial', () => {
   let getOrganizationStub
   let updateOrganizationStub
   let createCustomerStub
+  let org
+  let stripeCustomerId = 'cus_23423432'
+  let trialEnd = 2342342
 
   beforeEach(() => {
     validJob = { organizationId: organizationId }
   })
 
   beforeEach(() => {
-    getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves({ id: 2 })
-    updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves({})
+    org = { id: organizationId }
+    getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+    updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves(org)
     createCustomerStub = sinon.stub(stripe, 'createCustomerAndSubscriptionForOrganization').resolves({
-      customer: {},
+      customer: {
+        id: stripeCustomerId
+      },
       subscription: {
-        trial_end: '234'
+        trial_end: trialEnd
       }
     })
   })
@@ -69,7 +76,81 @@ describe('#organization.plan.start-trial', () => {
     })
   })
 
-  xdescribe('Errors', () => {})
+  describe('Errors', () => {
+    it('should throw an error if no `trialEnd` is specified by the subscription', done => {
+      createCustomerStub.resolves({
+        customer: {},
+        subscription: {}
+      })
 
-  xdescribe('Main Functionality', () => {})
+      CreateOrganizationInStripeAndStartTrial(validJob)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.include('trialEnd')
+          done()
+        })
+    })
+
+    it('should throw a `WorkerStopError` if an `EntityExistsInStripeError` is received', done => {
+      let thrownErr = new EntityExistsInStripeError('')
+      createCustomerStub.rejects(thrownErr)
+
+      CreateOrganizationInStripeAndStartTrial(validJob)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.data.err).to.equal(thrownErr)
+          done()
+        })
+    })
+
+    it('should throw the error if the error was unexpected', done => {
+      let thrownErr = new Error('some unexpected error')
+      createCustomerStub.rejects(thrownErr)
+
+      CreateOrganizationInStripeAndStartTrial(validJob)
+        .asCallback(err => {
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('Main Functionality', () => {
+    it('should get the organization', () => {
+      return CreateOrganizationInStripeAndStartTrial(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(
+            getOrganizationStub,
+            organizationId
+          )
+        })
+    })
+
+    it('should create the customer', () => {
+      return CreateOrganizationInStripeAndStartTrial(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(createCustomerStub)
+          sinon.assert.calledWithExactly(
+            createCustomerStub,
+            org
+          )
+        })
+    })
+
+    it('should update the organization', () => {
+      return CreateOrganizationInStripeAndStartTrial(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(updateOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updateOrganizationStub,
+            organizationId,
+            {
+              stripeCustomerId: stripeCustomerId,
+              trialEnd: trialEnd
+            }
+          )
+        })
+    })
+  })
 })

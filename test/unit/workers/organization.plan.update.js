@@ -17,22 +17,22 @@ describe('#organization.plan.update', () => {
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let organizationId = 67898
   let getOrganizationStub
-  let updateOrganizationStub
   let updateUsersForPlanStub
+  let org
+  let orgCustomerId = 'cus_wwer823j23'
 
   beforeEach(() => {
+    org = { id: organizationId, stripeCustomerId: orgCustomerId }
     validJob = { organizationId: organizationId }
   })
 
   beforeEach(() => {
-    getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves({ id: 2, stripeCustomerId: 'cus_234234' })
-    updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves({})
+    getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
     updateUsersForPlanStub = sinon.stub(stripe, 'updateUsersForPlan').resolves()
   })
 
   afterEach(() => {
     getOrganizationStub.restore()
-    updateOrganizationStub.restore()
     updateUsersForPlanStub.restore()
   })
 
@@ -64,7 +64,51 @@ describe('#organization.plan.update', () => {
     })
   })
 
-  xdescribe('Errors', () => {})
+  describe('Errors', () => {
+    it('should throw an error if no `stripeCustomerId` is specified in the org', done => {
+      delete org.stripeCustomerId
 
-  xdescribe('Main Functionality', () => {})
+      UpdatPlan(validJob)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.include('stripeCustomerId')
+          done()
+        })
+    })
+
+    it('should throw the error if the error was unexpected', done => {
+      let thrownErr = new Error('some unexpected error')
+      updateUsersForPlanStub.rejects(thrownErr)
+
+      UpdatPlan(validJob)
+        .asCallback(err => {
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('Main Functionality', () => {
+    it('should fetch the organization', () => {
+      return UpdatPlan(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(
+            getOrganizationStub,
+            organizationId
+          )
+        })
+    })
+
+    it('should update the plan', () => {
+      return UpdatPlan(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(updateUsersForPlanStub)
+          sinon.assert.calledWithExactly(
+            updateUsersForPlanStub,
+            org
+          )
+        })
+    })
+  })
 })
