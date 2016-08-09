@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "standard --verbose",
-    "test": "npm run lint && NODE_PATH=./lib NODE_ENV=test mocha --recursive test/",
+    "test": "npm run lint && npm run coverage",
     "coverage": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha -- --recursive test",
     "coverage-unit": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-unit -- --recursive test/unit",
     "coverage-functional": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-functional -- --recursive test/functional",
