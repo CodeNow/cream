@@ -23,7 +23,7 @@ describe('#organization.plan.update', () => {
 
   beforeEach(() => {
     org = { id: organizationId, stripeCustomerId: orgCustomerId }
-    validJob = { organizationId: organizationId }
+    validJob = { organization: { id: organizationId } }
   })
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('#organization.plan.update', () => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/invalid.*job/i)
-          expect(err.message).to.match(/organizationId/i)
+          expect(err.message).to.match(/organization/i)
           done()
         })
     })

@@ -25,7 +25,7 @@ describe('#organization.plan.start-trial', () => {
   let trialEnd = 2342342
 
   beforeEach(() => {
-    validJob = { organizationId: organizationId }
+    validJob = { organization: { id: organizationId } }
   })
 
   beforeEach(() => {
@@ -60,13 +60,13 @@ describe('#organization.plan.start-trial', () => {
         })
     })
 
-    it('should not validate if `organizationId` is not passed', done => {
+    it('should not validate if `organization.id` is not passed', done => {
       CreateOrganizationInStripeAndStartTrial({ tid: tid })
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/invalid.*job/i)
-          expect(err.message).to.match(/organizationId/i)
+          expect(err.message).to.match(/organization/i)
           done()
         })
     })
