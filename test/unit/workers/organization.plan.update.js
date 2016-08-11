@@ -65,13 +65,25 @@ describe('#organization.plan.update', () => {
   })
 
   describe('Errors', () => {
-    it('should throw an error if no `stripeCustomerId` is specified in the org', done => {
+    it('should throw a WorkerStopError if no `stripeCustomerId` is specified in the org', done => {
       delete org.stripeCustomerId
 
       UpdatPlan(validJob)
         .asCallback(err => {
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.include('stripeCustomerId')
+          done()
+        })
+    })
+
+    it('should throw an WorkerStopError if the organization was not found', done => {
+      let thrownErr = new Error('Resource not found')
+      getOrganizationStub.rejects(thrownErr)
+
+      UpdatPlan(validJob)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.match(/does.*not.*exist/i)
           done()
         })
     })

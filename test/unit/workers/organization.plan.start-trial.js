@@ -103,6 +103,18 @@ describe('#organization.plan.start-trial', () => {
         })
     })
 
+    it('should throw an WorkerStopError if the organization was not found', done => {
+      let thrownErr = new Error('Resource not found')
+      getOrganizationStub.rejects(thrownErr)
+
+      CreateOrganizationInStripeAndStartTrial(validJob)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.match(/does.*not.*exist/i)
+          done()
+        })
+    })
+
     it('should throw the error if the error was unexpected', done => {
       let thrownErr = new Error('some unexpected error')
       createCustomerStub.rejects(thrownErr)
