@@ -61,7 +61,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "istanbul": "^0.4.4",
-    "mehpi": "^1.0.0",
+    "mehpi": "git+ssh://git@github.com:runnable/mehpi#v1.0.1",
     "mocha": "^2.5.3",
     "sinon": "^1.17.5",
     "sinon-as-promised": "^4.0.2",
