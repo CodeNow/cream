@@ -7,6 +7,11 @@ const expect = require('chai').expect
 
 const express = require('express')
 
+const OrganizationWithStripeCustomerIdFixture = require('../../../fixtures/big-poppa/organization-with-stripe-customer-id')
+
+const stripe = require('util/stripe')
+const bigPoppa = require('util/big-poppa')
+
 const OrganizationRouter = require('http/routes/organization')
 
 describe('HTTP /organization', () => {
@@ -82,18 +87,64 @@ describe('HTTP /organization', () => {
 
   describe('#postPaymentMethod', () => {
     let requestStub
+    let getOrganizationStub
+    let updatePaymentMethodForOrganizationStub
+    let org = OrganizationWithStripeCustomerIdFixture
+    let orgId = org.id
+    let user = org.users[0]
+    let userId = user.id
+    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
 
     beforeEach(() => {
-      requestStub = { query: {} }
+      requestStub = {
+        params: { id: orgId },
+        body: {
+          stripeToken: stripeTokenId,
+          user: { id: userId }
+        }
+      }
+    })
+
+    beforeEach('Stub out', () => {
+      getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+      updatePaymentMethodForOrganizationStub = sinon.stub(stripe, 'updatePaymentMethodForOrganization').resolves()
+    })
+    afterEach(() => {
+      getOrganizationStub.restore()
+      updatePaymentMethodForOrganizationStub.restore()
+    })
+
+    it('should call `getOrganization`', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(
+            getOrganizationStub,
+            orgId
+          )
+        })
+    })
+
+    it('should call `updatePaymentMethodForOrganization`', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(updatePaymentMethodForOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updatePaymentMethodForOrganizationStub,
+            org,
+            stripeTokenId,
+            user
+          )
+        })
     })
 
     it('should call `status` and `send`', () => {
       return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 501)
+          sinon.assert.calledWithExactly(responseStub.status, 201)
           sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Not yet implemented')
+          sinon.assert.calledWith(responseStub.send, 'Succsefully updated')
         })
     })
   })
