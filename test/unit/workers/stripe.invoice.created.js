@@ -11,6 +11,8 @@ const bigPoppa = require('util/big-poppa')
 
 const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
 
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
+
 const ProcessInvoiceCreated = require('workers/stripe.invoice.created').task
 const ProcessInvoiceCreatedSchema = require('workers/stripe.invoice.created').jobSchema
 
@@ -82,7 +84,22 @@ describe('#stripe.invoice.created', () => {
     })
   })
 
-  xdescribe('Errors', () => {})
+  describe('Errors', () => {
+    it('should throw a `WorkerStopError` if nor org is found', done => {
+      getOrganizationsStub.resolves([])
+      ProcessInvoiceCreated(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.match(/stripeCustomerId/i)
+          done()
+        })
+    })
+
+    it('should throw any other errors', () => {
+
+    })
+  })
 
   describe('Main Functionality', () => {
     it('should call `getEvent`', () => {

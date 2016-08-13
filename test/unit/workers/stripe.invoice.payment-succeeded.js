@@ -8,8 +8,10 @@ require('sinon-as-promised')(Promise)
 
 const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
+const moment = require('moment')
 
 const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
 const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-succeeded').jobSchema
@@ -18,11 +20,13 @@ describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
+  let orgId = OrganizationsFixture[0].id
   let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
   let getEventStub
   let getOrganizationsStub
   let updateOrganizationStub
   let stripeEvent
+  let activePeriodEnd = moment(1471050735, 'X')
 
   beforeEach(() => {
     validJob = { tid: tid, id: eventId }
@@ -33,7 +37,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
-          period_end: 1471050735
+          period_end: activePeriodEnd.format('X')
         }
       }
     }
@@ -76,11 +80,63 @@ describe('#stripe.invoice.payment-succeeded', () => {
     })
   })
 
-  xdescribe('Errors', () => {})
+  describe('Errors', () => {
+    it('should throw a `WorkerStopError` if no orgs are found', done => {
+      getOrganizationsStub.resolves([])
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/stripeCustomerId/i)
+          done()
+        })
+    })
+
+    it('should throw any unhandled errors', done => {
+      let thrownErr = new Error()
+      getOrganizationsStub.rejects(thrownErr)
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
 
   describe('Main Functionality', () => {
     it('should succsefully complete a valid job', () => {
       return ProcessPaymentSucceeded(validJob)
+    })
+
+    it('should fetch the organization', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getEventStub)
+          sinon.assert.calledWithExactly(getEventStub, eventId)
+        })
+    })
+
+    it('should fetch the organization', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationsStub)
+          sinon.assert.calledWithExactly(getOrganizationsStub, { stripeCustomerId: stripeCustomerId })
+        })
+    })
+
+    it('should update the organization', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(updateOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updateOrganizationStub,
+            orgId,
+            { activePeriodEnd: activePeriodEnd.toISOString() }
+          )
+        })
     })
   })
 })

@@ -13,6 +13,7 @@ const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
 
 const OrganizationRouter = require('http/routes/organization')
+const UserNotPartOfOrganizationError = require('errors/validation-error')
 
 describe('HTTP /organization', () => {
   let responseStub
@@ -145,6 +146,16 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWithExactly(responseStub.status, 201)
           sinon.assert.calledOnce(responseStub.send)
           sinon.assert.calledWith(responseStub.send, 'Succsefully updated')
+        })
+    })
+
+    it('should throw a `UserNotPartOfOrganizationError` if the user is part of the organization', done => {
+      requestStub.body.user.id = 23423423
+      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(UserNotPartOfOrganizationError)
+          done()
         })
     })
   })
