@@ -11,6 +11,7 @@ const stripeClient = Stripe.stripeClient
 
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const EntityNotFoundError = require('errors/entity-not-found-error')
+const StripeError = require('errors/stripe-error')
 
 describe('Stripe', function () {
   let orgMock
@@ -314,7 +315,7 @@ describe('Stripe', function () {
     let customer
 
     beforeEach('stub out Stripe API calls', () => {
-      customer = {}
+      customer = { id: 'cus_2342323' }
       createCustomerStub = sinon.stub(stripeClient.customers, 'create').resolves(customer)
     })
 
@@ -337,6 +338,17 @@ describe('Stripe', function () {
               }
             }
           )
+        })
+    })
+
+    it('should throw a StripeError if no Stripe customer is returned', done => {
+      createCustomerStub.resolves(null)
+
+      Stripe._createCustomer(orgMock)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(StripeError)
+          done()
         })
     })
 
