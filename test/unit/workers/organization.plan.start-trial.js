@@ -7,6 +7,7 @@ require('sinon-as-promised')(Promise)
 
 const bigPoppa = require('util/big-poppa')
 const stripe = require('util/stripe')
+const moment = require('moment')
 
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -22,7 +23,7 @@ describe('#organization.plan.start-trial', () => {
   let createCustomerStub
   let org
   let stripeCustomerId = 'cus_23423432'
-  let trialEnd = 2342342
+  let trialEnd = 1471135084
 
   beforeEach(() => {
     validJob = { organization: { id: organizationId } }
@@ -159,7 +160,7 @@ describe('#organization.plan.start-trial', () => {
             organizationId,
             {
               stripeCustomerId: stripeCustomerId,
-              trialEnd: trialEnd
+              trialEnd: moment(trialEnd, 'X').toISOString()
             }
           )
         })
