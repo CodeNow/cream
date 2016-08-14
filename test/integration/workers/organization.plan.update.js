@@ -70,7 +70,8 @@ describe('#organiztion.plan.update Integration Test', () => {
     updateUsersForPlanSpy.restore()
   })
 
-  before('Create customer and subscription', () => {
+  before('Create customer and subscription', function () {
+    this.timeout(5000)
     return stripe.stripeClient.customers.create({
       description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
     })
