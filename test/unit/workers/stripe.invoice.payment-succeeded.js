@@ -107,7 +107,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
   })
 
   describe('Main Functionality', () => {
-    it('should succsefully complete a valid job', () => {
+    it('should successfully complete a valid job', () => {
       return ProcessPaymentSucceeded(validJob)
     })
 
