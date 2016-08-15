@@ -90,6 +90,7 @@ describe('HTTP /organization', () => {
     let requestStub
     let getOrganizationStub
     let updatePaymentMethodForOrganizationStub
+    let updateOrganizationStub
     let org = OrganizationWithStripeCustomerIdFixture
     let orgId = org.id
     let user = org.users[0]
@@ -108,10 +109,12 @@ describe('HTTP /organization', () => {
 
     beforeEach('Stub out', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+      updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves(org)
       updatePaymentMethodForOrganizationStub = sinon.stub(stripe, 'updatePaymentMethodForOrganization').resolves()
     })
     afterEach(() => {
       getOrganizationStub.restore()
+      updateOrganizationStub.restore()
       updatePaymentMethodForOrganizationStub.restore()
     })
 
@@ -126,7 +129,19 @@ describe('HTTP /organization', () => {
         })
     })
 
-    it('should call `updatePaymentMethodForOrganization`', () => {
+    it('should update the `hasPaymentMethod` property to `true`', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(updateOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updateOrganizationStub,
+            orgId,
+            { hasPaymentMethod: true }
+          )
+        })
+    })
+
+    it('should update the organization', () => {
       return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(updatePaymentMethodForOrganizationStub)

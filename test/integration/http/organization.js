@@ -94,6 +94,10 @@ describe('OrganizationRouter Integration Test', () => {
         status: 200,
         body: OrganizationWithStripeCustomerIdFixture
       })
+      bigPoppaAPI.stub('PATCH', `/organization/${orgId}`).returns({
+        status: 201,
+        body: OrganizationWithStripeCustomerIdFixture
+      })
       bigPoppaAPI.start(done)
     })
     after(done => {
