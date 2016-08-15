@@ -160,7 +160,7 @@ describe('HTTP /organization', () => {
           sinon.assert.calledOnce(responseStub.status)
           sinon.assert.calledWithExactly(responseStub.status, 201)
           sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Succsefully updated')
+          sinon.assert.calledWith(responseStub.send, 'Successfully updated')
         })
     })
 
