@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "standard --verbose",
-    "test": "npm run lint && NODE_PATH=./lib NODE_ENV=test mocha --recursive test/",
+    "test": "npm run lint && npm run coverage",
     "coverage": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha -- --recursive test",
     "coverage-unit": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-unit -- --recursive test/unit",
     "coverage-functional": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-functional -- --recursive test/functional",
@@ -47,18 +47,21 @@
   "homepage": "https://github.com/CodeNow/CREAM#readme",
   "dependencies": {
     "101": "^1.6.1",
+    "@runnable/api-client": "^7.5.0",
+    "@runnable/big-poppa-client": "^0.2.1",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "bunyan": "^1.8.1",
     "express": "^4.14.0",
     "joi": "^9.0.4",
     "loadenv": "^2.2.0",
-    "ponos": "^4.2.1",
+    "ponos": "^4.6.0",
     "stripe": "^4.9.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "istanbul": "^0.4.4",
+    "mehpi": "git+ssh://git@github.com:runnable/mehpi#v1.0.1",
     "mocha": "^2.5.3",
     "sinon": "^1.17.5",
     "sinon-as-promised": "^4.0.2",
