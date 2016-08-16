@@ -72,16 +72,15 @@ describe('HTTP /organization', () => {
     let requestStub
 
     beforeEach(() => {
-      requestStub = { query: {} }
+      requestStub = { params: { id: 55 } }
     })
 
     it('should call `status` and `send`', () => {
       return OrganizationRouter.getPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 501)
-          sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Not yet implemented')
+          sinon.assert.calledWithExactly(responseStub.status, 200)
+          sinon.assert.calledOnce(responseStub.json)
         })
     })
   })
