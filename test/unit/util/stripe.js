@@ -915,5 +915,4 @@ describe('Stripe', function () {
         })
     })
   })
-
 })
