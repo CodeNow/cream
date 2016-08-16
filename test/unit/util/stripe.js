@@ -869,4 +869,51 @@ describe('Stripe', function () {
         })
     })
   })
+
+  describe('getPlan', () => {
+    let getPlanStub
+    let plan
+    let planId = 'runnable-standard'
+    let amount = 900
+
+    beforeEach('Stub out method', () => {
+      plan = {
+        id: planId,
+        amount: amount
+      }
+      getPlanStub = sinon.stub(stripeClient.plans, 'retrieve').resolves(plan)
+    })
+
+    afterEach('Restore stub', () => {
+      getPlanStub.restore()
+    })
+
+    it('should return the retrieved plan', () => {
+      Stripe.getPlan(planId)
+        .then(plan => {
+          expect(plan).to.be.an('object')
+          expect(plan.id).to.equal(planId)
+          expect(plan.price).to.equal(amount)
+          expect(plan.maxConfigurations).to.equal(7)
+
+          sinon.assert.calledOnce(getPlanStub)
+          sinon.assert.calledWithExactly(
+            getPlanStub,
+            planId
+          )
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      getPlanStub.rejects(thrownErr)
+
+      Stripe.getPlan(planId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
+
 })
