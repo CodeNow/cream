@@ -56,13 +56,14 @@ describe('OrganizationRouter Integration Test', () => {
   after('Disconnect from RabbitMQ', () => publisher.disconnect())
 
   describe('#postPaymentMethod', () => {
-    let orgId = OrganizationWithStripeCustomerIdFixture.id
-    let orgGithubId = OrganizationWithStripeCustomerIdFixture.githubId
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+    let orgId = org.id
+    let orgGithubId = org.githubId
     let stripeCustomerId
     let stripeTokenId
     let stripeCardId
-    let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
-    let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
+    let userId = org.users[0].id
+    let userGithubId = org.users[0].githubId
 
     before('Create customer', () => {
       return stripe.stripeClient.customers.create({
@@ -92,14 +93,14 @@ describe('OrganizationRouter Integration Test', () => {
     // Big Poppa Mock
     before('Stub out big-poppa calls', done => {
       // Update customer ID in order to be able to query subscription correctly
-      OrganizationWithStripeCustomerIdFixture.stripeCustomerId = stripeCustomerId
+      org.stripeCustomerId = stripeCustomerId
       bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
         status: 200,
-        body: OrganizationWithStripeCustomerIdFixture
+        body: org
       })
       bigPoppaAPI.stub('PATCH', `/organization/${orgId}`).returns({
         status: 201,
-        body: OrganizationWithStripeCustomerIdFixture
+        body: org
       })
       bigPoppaAPI.start(done)
     })
@@ -196,6 +197,69 @@ describe('OrganizationRouter Integration Test', () => {
           expect(card).to.have.property('brand', 'Visa')
           expect(owner).to.have.property('id', userId.toString())
           expect(owner).to.have.property('githubId', userGithubId.toString())
+        })
+    })
+  })
+
+  describe('#getPlans', () => {
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+    let orgId = org.id
+    let orgGithubId = org.githubId
+    let stripeCustomerId
+    let planId = 'runnable-plus'
+
+    before('Create customer', () => {
+      return stripe.stripeClient.customers.create({
+        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
+      })
+      .then(stripeCustomer => {
+        stripeCustomerId = stripeCustomer.id
+        return stripe.stripeClient.subscriptions.create({
+          customer: stripeCustomerId,
+          plan: planId,
+          metadata: {
+            users: JSON.stringify(['123', '456', 'ADDED_USER_TO_MEET_MINIMUM'])
+          }
+        })
+      })
+    })
+    after('Clean up Stripe', () => {
+      // Deleting the customer deletes the subscription
+      return stripe.stripeClient.customers.del(stripeCustomerId)
+    })
+
+    // Big Poppa Mock
+    before('Stub out big-poppa calls', done => {
+      // Update customer ID in order to be able to query subscription correctly
+      org.stripeCustomerId = stripeCustomerId
+      bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
+        status: 200,
+        body: org
+      })
+      bigPoppaAPI.start(done)
+    })
+    after(done => bigPoppaAPI.stop(done))
+
+    it('should fetch the plans', () => {
+      return request
+        .get(`http://localhost:${process.env.PORT}/organization/${orgId}/plan`)
+        .then(res => {
+          expect(res.body).to.have.deep.property('current.plan')
+          expect(res.body).to.have.deep.property('next.plan')
+          let currentPlan = res.body.current.plan
+          let nextPlan = res.body.next.plan
+          expect(currentPlan).to.be.an('object')
+          expect(nextPlan).to.be.an('object')
+
+          expect(currentPlan).to.have.property('id', planId)
+          expect(currentPlan.price).to.be.a('number')
+          expect(currentPlan.maxConfigurations).to.be.a('number')
+          expect(currentPlan.userCount).to.be.a('number')
+
+          expect(nextPlan).to.have.property('id')
+          expect(nextPlan.price).to.be.a('number')
+          expect(nextPlan.maxConfigurations).to.be.a('number')
+          expect(nextPlan.userCount).to.be.a('number')
         })
     })
   })

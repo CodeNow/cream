@@ -53,18 +53,138 @@ describe('HTTP /organization', () => {
 
   describe('#getPlan', () => {
     let requestStub
+    let getOrganizationStub
+    let getSubscriptionForOrganizationStub
+    let getPlanIdForOrganizationBasedOnCurrentUsageStub
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+    let orgId = org.id
+    let orgGithubId = org.githubId
+    let orgStripeCustomerId = org.stripeCustomerId
+    let getPlanStub
+    let subscription
+    let planId = 'runnable-standard'
+    let subscriptionPlanId = 'runnable-plus'
+    let currentStripePlan
+    let nextStripePlan
+    let users
 
     beforeEach(() => {
-      requestStub = { query: {} }
+      users = ['678', '909', '23423', '234234']
+      subscription = {
+        plan: {
+          id: subscriptionPlanId
+        },
+        metadata: {
+          users: JSON.stringify(users)
+        }
+      }
+      currentStripePlan = {
+        id: subscriptionPlanId,
+        price: 2900,
+        maxConfigurations: 7
+      }
+      nextStripePlan = {
+        id: planId,
+        price: 4900,
+        maxConfigurations: 15
+      }
+      requestStub = { params: { id: orgId } }
     })
 
-    it('should call `status` and `send`', () => {
+    beforeEach('Stub out methods', () => {
+      getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+      getSubscriptionForOrganizationStub = sinon.stub(stripe, '_getSubscriptionForOrganization').resolves(subscription)
+      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
+      getPlanStub = sinon.stub(stripe, 'getPlan')
+      getPlanStub.withArgs(planId).resolves(nextStripePlan)
+      getPlanStub.withArgs(subscriptionPlanId).resolves(currentStripePlan)
+    })
+    afterEach('Restore methods', () => {
+      getOrganizationStub.restore()
+      getSubscriptionForOrganizationStub.restore()
+      getPlanIdForOrganizationBasedOnCurrentUsageStub.restore()
+      getPlanStub.restore()
+    })
+
+    it('should fetch the organization', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(getOrganizationStub, orgId)
+        })
+    })
+
+    it('should get the subscription for the org', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeCustomerId)
+        })
+    })
+
+    it('should get the plan id for the org based on current usage', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getPlanIdForOrganizationBasedOnCurrentUsageStub)
+          sinon.assert.calledWithExactly(getPlanIdForOrganizationBasedOnCurrentUsageStub, orgGithubId)
+        })
+    })
+
+    it('should fetch the plans for the Stripe plans', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledTwice(getPlanStub)
+          sinon.assert.calledWithExactly(getPlanStub, planId)
+          sinon.assert.calledWithExactly(getPlanStub, subscriptionPlanId)
+        })
+    })
+
+    it('should return a propertly formatted `current` plan', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current.plan')
+          let currentPlan = responseStub.json.firstCall.args[0].current.plan
+          expect(currentPlan).to.be.an('object')
+          expect(currentPlan).to.have.property('id', subscriptionPlanId)
+          expect(currentPlan).to.have.property('price', currentStripePlan.price)
+          expect(currentPlan).to.have.property('maxConfigurations', currentStripePlan.maxConfigurations)
+          expect(currentPlan).to.have.property('userCount', users.length)
+        })
+    })
+
+    it('should return a propertly formatted `current` plan', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].next.plan')
+          let nextPlan = responseStub.json.firstCall.args[0].next.plan
+          expect(nextPlan).to.be.an('object')
+          expect(nextPlan).to.have.property('id', planId)
+          expect(nextPlan).to.have.property('price', nextStripePlan.price)
+          expect(nextPlan).to.have.property('maxConfigurations', nextStripePlan.maxConfigurations)
+          expect(nextPlan).to.have.property('userCount', 3)
+        })
+    })
+
+    it('should return `null` as a userCount if there is not users array', () => {
+      delete subscription.metadata.users
+
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current.plan')
+          let currentPlan = responseStub.json.firstCall.args[0].current.plan
+          expect(currentPlan).to.be.an('object')
+          expect(currentPlan).to.have.property('id', subscriptionPlanId)
+          expect(currentPlan).to.have.property('userCount', null)
+        })
+    })
+
+    it('should call `status` and `json`', () => {
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 501)
-          sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Not yet implemented')
+          sinon.assert.calledWithExactly(responseStub.status, 200)
+          sinon.assert.calledOnce(responseStub.json)
+          sinon.assert.calledWithExactly(responseStub.json, sinon.match.object)
         })
     })
   })
@@ -200,7 +320,7 @@ describe('HTTP /organization', () => {
     let getOrganizationStub
     let updatePaymentMethodForOrganizationStub
     let updateOrganizationStub
-    let org = OrganizationWithStripeCustomerIdFixture
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let user = org.users[0]
     let userId = user.id

@@ -793,7 +793,7 @@ describe('Stripe', function () {
     })
   })
 
-  describe('_generatePlanUsersForOrganization', () => {
+  describe('generatePlanUsersForOrganization', () => {
     let users
     // These are set in the application logic
     let MINIMUM_NUMBER_OF_USERS_IN_PLAN = 3
@@ -808,7 +808,7 @@ describe('Stripe', function () {
     })
 
     it('should return an array of github ids', () => {
-      let response = Stripe._generatePlanUsersForOrganization(users)
+      let response = Stripe.generatePlanUsersForOrganization(users)
       expect(response).to.be.an('array')
       response.every((i, item) => {
         expect(item).to.be.a('number')
@@ -819,14 +819,14 @@ describe('Stripe', function () {
     it('should return an array with at least the minimum number of users', () => {
       users.pop() // Remove last user
 
-      let response = Stripe._generatePlanUsersForOrganization(users)
+      let response = Stripe.generatePlanUsersForOrganization(users)
       expect(response).to.be.an('array')
       expect(response.length).to.equal(MINIMUM_NUMBER_OF_USERS_IN_PLAN)
       expect(response).to.deep.equal([6, 7, addedUserString])
     })
 
     it('should return a populated array even when given an empty array', () => {
-      let response = Stripe._generatePlanUsersForOrganization([])
+      let response = Stripe.generatePlanUsersForOrganization([])
       expect(response).to.be.an('array')
       expect(response.length).to.equal(MINIMUM_NUMBER_OF_USERS_IN_PLAN)
       expect(response).to.deep.equal([addedUserString, addedUserString, addedUserString])
