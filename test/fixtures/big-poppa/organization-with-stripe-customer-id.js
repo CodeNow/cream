@@ -9,7 +9,7 @@ module.exports = {
   gracePeriodEnd: (new Date()).getTime(),
   isActive: true,
   firstDockCreated: false,
-  users: [ { githubId: 1981198 } ],
+  users: [ { id: 76, githubId: 1981198 } ],
   isPastTrial: false,
   isPastActivePeriod: true,
   isPastGracePeriod: false,

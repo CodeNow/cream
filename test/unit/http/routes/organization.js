@@ -7,7 +7,13 @@ const expect = require('chai').expect
 
 const express = require('express')
 
+const OrganizationWithStripeCustomerIdFixture = require('../../../fixtures/big-poppa/organization-with-stripe-customer-id')
+
+const stripe = require('util/stripe')
+const bigPoppa = require('util/big-poppa')
+
 const OrganizationRouter = require('http/routes/organization')
+const UserNotPartOfOrganizationError = require('errors/validation-error')
 
 describe('HTTP /organization', () => {
   let responseStub
@@ -82,18 +88,89 @@ describe('HTTP /organization', () => {
 
   describe('#postPaymentMethod', () => {
     let requestStub
+    let getOrganizationStub
+    let updatePaymentMethodForOrganizationStub
+    let updateOrganizationStub
+    let org = OrganizationWithStripeCustomerIdFixture
+    let orgId = org.id
+    let user = org.users[0]
+    let userId = user.id
+    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
 
     beforeEach(() => {
-      requestStub = { query: {} }
+      requestStub = {
+        params: { id: orgId },
+        body: {
+          stripeToken: stripeTokenId,
+          user: { id: userId }
+        }
+      }
+    })
+
+    beforeEach('Stub out', () => {
+      getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+      updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves(org)
+      updatePaymentMethodForOrganizationStub = sinon.stub(stripe, 'updatePaymentMethodForOrganization').resolves()
+    })
+    afterEach(() => {
+      getOrganizationStub.restore()
+      updateOrganizationStub.restore()
+      updatePaymentMethodForOrganizationStub.restore()
+    })
+
+    it('should call `getOrganization`', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(
+            getOrganizationStub,
+            orgId
+          )
+        })
+    })
+
+    it('should update the `hasPaymentMethod` property to `true`', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(updateOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updateOrganizationStub,
+            orgId,
+            { hasPaymentMethod: true }
+          )
+        })
+    })
+
+    it('should update the organization', () => {
+      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(updatePaymentMethodForOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updatePaymentMethodForOrganizationStub,
+            org,
+            stripeTokenId,
+            user
+          )
+        })
     })
 
     it('should call `status` and `send`', () => {
       return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 501)
+          sinon.assert.calledWithExactly(responseStub.status, 201)
           sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Not yet implemented')
+          sinon.assert.calledWith(responseStub.send, 'Successfully updated')
+        })
+    })
+
+    it('should throw a `UserNotPartOfOrganizationError` if the user is part of the organization', done => {
+      requestStub.body.user.id = 23423423
+      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(UserNotPartOfOrganizationError)
+          done()
         })
     })
   })

@@ -17,7 +17,7 @@ describe('Stripe', function () {
   let orgMock
   let orgId = 123
   let githubId = 23423
-  let stripeCustomerId = 'cust_23423'
+  let stripeCustomerId = 'cus_905mQ5RdbhTUc1'
 
   beforeEach('Create mock for org', () => {
     orgMock = {
@@ -40,8 +40,7 @@ describe('Stripe', function () {
     beforeEach('Create mock for org', () => {
       users = []
       orgMockNotInStripe = {
-        id: orgId,
-        githubId: githubId,
+        id: orgId, githubId: githubId,
         users: users
       }
       stripeCustomer = {
@@ -166,6 +165,235 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()
+        })
+    })
+  })
+
+  describe('updatePlanIdForOrganizationBasedOnCurrentUsage', () => {
+    let _getSubscriptionForOrganizationStub
+    let getPlanIdForOrganizationBasedOnCurrentUsageStub
+    let updateSubsriptionStub
+    let planId = 'runnable-basic'
+    let subscriptionId = 'sub_18i5aXLYrJgOrBWzYNR9xq87'
+
+    beforeEach('Stub out method', () => {
+      let subscription = {
+        id: subscriptionId
+      }
+      _getSubscriptionForOrganizationStub = sinon.stub(Stripe, '_getSubscriptionForOrganization').resolves(subscription)
+      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(Stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
+      updateSubsriptionStub = sinon.stub(stripeClient.subscriptions, 'update').resolves()
+    })
+    afterEach('Restore stub', () => {
+      _getSubscriptionForOrganizationStub.restore()
+      getPlanIdForOrganizationBasedOnCurrentUsageStub.restore()
+      updateSubsriptionStub.restore()
+    })
+
+    it('should fetch the subscription', () => {
+      return Stripe.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
+        .then(() => {
+          sinon.assert.calledOnce(_getSubscriptionForOrganizationStub)
+          sinon.assert.calledWithExactly(_getSubscriptionForOrganizationStub, orgMock.stripeCustomerId)
+        })
+    })
+
+    it('should fetch the plan', () => {
+      return Stripe.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
+        .then(() => {
+          sinon.assert.calledOnce(getPlanIdForOrganizationBasedOnCurrentUsageStub)
+          sinon.assert.calledWithExactly(getPlanIdForOrganizationBasedOnCurrentUsageStub, orgMock.githubId)
+        })
+    })
+
+    it('should update the plan in the subscription', () => {
+      return Stripe.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
+        .then(() => {
+          sinon.assert.calledOnce(updateSubsriptionStub)
+          sinon.assert.calledWithExactly(updateSubsriptionStub, subscriptionId, { plan: planId })
+        })
+    })
+
+    it('should return any errors', done => {
+      let thrownErr = new Error()
+      updateSubsriptionStub.rejects(thrownErr)
+
+      Stripe.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('updatePaymentMethodForOrganization', () => {
+    let updateCustomerStub
+    let org
+    let user
+    let userId = 23423
+    let userGithubId = 1981198
+    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+
+    beforeEach('Create mocks', () => {
+      org = {
+        stripeCustomerId: stripeCustomerId
+      }
+      user = {
+        id: userId,
+        githubId: userGithubId
+      }
+    })
+
+    beforeEach('Stub out method', () => {
+      updateCustomerStub = sinon.stub(stripeClient.customers, 'update').resolves()
+    })
+    afterEach('Restore stub', () => {
+      updateCustomerStub.restore()
+    })
+
+    it('should update the customer', () => {
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .then(() => {
+          sinon.assert.calledOnce(updateCustomerStub)
+          sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, sinon.match.object)
+        })
+    })
+
+    it('should update the customer with the Stripe token and the correct metadata', () => {
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .then(() => {
+          sinon.assert.calledOnce(updateCustomerStub)
+          sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, {
+            source: stripeTokenId,
+            metadata: {
+              paymentMethodOwnerId: userId,
+              paymentMethodOwnerGithubId: userGithubId
+            }
+          })
+        })
+    })
+
+    it('should throw an error if the org has no `stripeCustomerId`', () => {
+      delete org.stripeCustomerId
+
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err.message).to.match(/stripeCustomerId/i)
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      updateCustomerStub.rejects(thrownErr)
+
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
+
+  describe('updateInvoiceWithPaymentMethodOwner', () => {
+    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
+    let customer
+    let retrieveCustomerStub
+    let _updateInvoiceMetadataStub
+
+    beforeEach('Stub out method', () => {
+      customer = {}
+      retrieveCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
+      _updateInvoiceMetadataStub = sinon.stub(Stripe, '_updateInvoiceMetadata').resolves()
+    })
+
+    afterEach('Restore stub', () => {
+      retrieveCustomerStub.restore()
+      _updateInvoiceMetadataStub.restore()
+    })
+
+    it('should retrieve the customer', () => {
+      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
+        .then(() => {
+          sinon.assert.calledOnce(retrieveCustomerStub)
+          sinon.assert.calledWithExactly(
+            retrieveCustomerStub,
+            stripeCustomerId
+          )
+        })
+    })
+
+    it('should update the invoice metadata', () => {
+      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
+        .then(() => {
+          sinon.assert.calledOnce(_updateInvoiceMetadataStub)
+          sinon.assert.calledWithExactly(
+            _updateInvoiceMetadataStub,
+            invoiceId,
+            customer
+          )
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      _updateInvoiceMetadataStub.rejects(thrownErr)
+
+      Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
+
+  describe('_updateInvoiceMetadata', () => {
+    let updateInvoiceStub
+    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
+    let customer
+    let userId = 23423
+    let userGithubId = 198198
+
+    beforeEach('Stub out method', () => {
+      customer = {
+        metadata: {
+          paymentMethodOwnerId: userId,
+          paymentMethodOwnerGithubId: userGithubId
+        }
+      }
+      updateInvoiceStub = sinon.stub(stripeClient.invoices, 'update').resolves()
+    })
+
+    afterEach('Restore stub', () => {
+      updateInvoiceStub.restore()
+    })
+
+    it('should update the invoice with the corrrect metadata', () => {
+      return Stripe._updateInvoiceMetadata(invoiceId, customer)
+        .then(() => {
+          sinon.assert.calledOnce(updateInvoiceStub)
+          sinon.assert.calledWithExactly(
+            updateInvoiceStub,
+            invoiceId,
+            {
+              metadata: {
+                paymentMethodOwnerId: userId,
+                paymentMethodOwnerGithubId: userGithubId
+              }
+            }
+          )
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      updateInvoiceStub.rejects(thrownErr)
+
+      Stripe._updateInvoiceMetadata(invoiceId, customer)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
         })
     })
   })
@@ -558,6 +786,43 @@ describe('Stripe', function () {
       expect(response).to.be.an('array')
       expect(response.length).to.equal(MINIMUM_NUMBER_OF_USERS_IN_PLAN)
       expect(response).to.deep.equal([addedUserString, addedUserString, addedUserString])
+    })
+  })
+
+  describe('getEvent', () => {
+    let getEventStub
+    let eventId = 'evt_18i5aXLYrJgOrBWzYNR9xq87'
+    let stripeEvent = {}
+
+    beforeEach('Stub out method', () => {
+      getEventStub = sinon.stub(stripeClient.events, 'retrieve').resolves(stripeEvent)
+    })
+
+    afterEach('Restore stub', () => {
+      getEventStub.restore()
+    })
+
+    it('should return the retrieved event', () => {
+      Stripe.getEvent(eventId)
+        .then(e => {
+          expect(e).to.equal(stripeEvent)
+          sinon.assert.calledOnce(getEventStub)
+          sinon.assert.calledWithExactly(
+            getEventStub,
+            eventId
+          )
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      getEventStub.rejects(thrownErr)
+
+      Stripe.getEvent(eventId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
     })
   })
 })

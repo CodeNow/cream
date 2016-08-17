@@ -24,8 +24,9 @@ const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
 describe('#organiztion.plan.update Integration Test', () => {
-  let orgId = OrganizationWithStripeCustomerIdFixture.id
-  let orgGithubId = OrganizationWithStripeCustomerIdFixture.githubId
+  let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+  let orgId = org.id
+  let orgGithubId = org.githubId
   let stripeCustomerId
   let stripeSubscriptionId
   let publisher
@@ -94,16 +95,17 @@ describe('#organiztion.plan.update Integration Test', () => {
 
   // Big Poppa Mock
   before('Stub out big-poppa calls', done => {
-    OrganizationWithStripeCustomerIdFixture.users = users
+    org.users = users
     // Update customer ID in order to be able to query subscription correctly
-    OrganizationWithStripeCustomerIdFixture.stripeCustomerId = stripeCustomerId
+    org.stripeCustomerId = stripeCustomerId
     bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
       status: 200,
-      body: OrganizationWithStripeCustomerIdFixture
+      body: org
     })
     bigPoppaAPI.start(done)
   })
   after(done => {
+    bigPoppaAPI.restore()
     bigPoppaAPI.stop(done)
   })
 
@@ -116,8 +118,8 @@ describe('#organiztion.plan.update Integration Test', () => {
         githubId: orgGithubId
       },
       user: {
-        id: OrganizationWithStripeCustomerIdFixture.users[0].id,
-        githubId: OrganizationWithStripeCustomerIdFixture.users[0].githubId
+        id: org.users[0].id,
+        githubId: org.users[0].githubId
       }
     })
   })

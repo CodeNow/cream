@@ -48,13 +48,14 @@
   "dependencies": {
     "101": "^1.6.1",
     "@runnable/api-client": "^7.5.0",
-    "@runnable/big-poppa-client": "^0.2.1",
+    "@runnable/big-poppa-client": "^0.4.0",
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "bunyan": "^1.8.1",
     "express": "^4.14.0",
     "joi": "^9.0.4",
     "loadenv": "^2.2.0",
+    "moment": "^2.14.1",
     "ponos": "^4.6.0",
     "stripe": "^4.9.0"
   },
@@ -65,6 +66,8 @@
     "mocha": "^2.5.3",
     "sinon": "^1.17.5",
     "sinon-as-promised": "^4.0.2",
-    "standard": "^7.1.2"
+    "standard": "^7.1.2",
+    "superagent": "^1.8.4",
+    "superagent-promise-plugin": "^3.2.0"
   }
 }
