@@ -26,6 +26,9 @@ const httpServer = require('http/server')
 
 describe('OrganizationRouter Integration Test', () => {
   let publisher
+  let cardNumber = '4242424242424242'
+  let cardExpMonth = 12
+  let cardExpYear = 2017
 
   // HTTP
   before('Start HTTP server', () => httpServer.start())
@@ -69,9 +72,9 @@ describe('OrganizationRouter Integration Test', () => {
         stripeCustomerId = stripeCustomer.id
         return stripe.stripeClient.tokens.create({
           card: {
-            number: '4242424242424242',
-            exp_month: 12,
-            exp_year: 2017,
+            number: cardNumber,
+            exp_month: cardExpMonth,
+            exp_year: cardExpYear,
             cvc: '123'
           }
         })
@@ -116,6 +119,83 @@ describe('OrganizationRouter Integration Test', () => {
           expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerId', userId.toString())
           expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerGithubId', userGithubId.toString())
           expect(stripeCustomer).to.have.property('default_source', stripeCardId)
+        })
+    })
+  })
+
+  describe('#getPaymentMethod', () => {
+    let orgId = OrganizationWithStripeCustomerIdFixture.id
+    let orgGithubId = OrganizationWithStripeCustomerIdFixture.githubId
+    let stripeCustomerId
+    let stripeTokenId
+    let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
+    let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
+
+    before('Create customer', () => {
+      return stripe.stripeClient.customers.create({
+        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
+      })
+      .then(stripeCustomer => {
+        stripeCustomerId = stripeCustomer.id
+        return stripe.stripeClient.tokens.create({
+          card: {
+            number: cardNumber,
+            exp_month: cardExpMonth,
+            exp_year: cardExpYear,
+            cvc: '123'
+          }
+        })
+      })
+      .then(stripeToken => {
+        stripeTokenId = stripeToken.id
+        // stripeCardId = stripeToken.card.id
+      })
+    })
+    after('Clean up Stripe', () => {
+      // Deleting the customer deletes the subscription
+      return stripe.stripeClient.customers.del(stripeCustomerId)
+    })
+
+    // Big Poppa Mock
+    before('Stub out big-poppa calls', done => {
+      // Update customer ID in order to be able to query subscription correctly
+      OrganizationWithStripeCustomerIdFixture.stripeCustomerId = stripeCustomerId
+      bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
+        status: 200,
+        body: OrganizationWithStripeCustomerIdFixture
+      })
+      bigPoppaAPI.stub('PATCH', `/organization/${orgId}`).returns({
+        status: 201,
+        body: OrganizationWithStripeCustomerIdFixture
+      })
+      bigPoppaAPI.start(done)
+    })
+    after(done => {
+      bigPoppaAPI.stop(done)
+    })
+
+    it('should get the current payment method', () => {
+      return request
+        .post(`http://localhost:${process.env.PORT}/organization/${orgId}/payment-method`)
+        .type('json')
+        .send({ stripeToken: stripeTokenId, user: { id: userId } })
+        .then(() => {
+          return request.get(`http://localhost:${process.env.PORT}/organization/${orgId}/payment-method/`)
+        })
+        .then(res => {
+          let body = res.body
+          expect(body).to.be.an('object')
+          expect(body.card).to.be.an('object')
+          expect(body.owner).to.be.an('object')
+          let card = body.card
+          let owner = body.owner
+          expect(card).to.have.property('object', 'card')
+          expect(card).to.have.property('expMonth', cardExpMonth)
+          expect(card).to.have.property('expYear', cardExpYear)
+          expect(card).to.have.property('last4', cardNumber.substr(cardNumber.length - 4))
+          expect(card).to.have.property('brand', 'Visa')
+          expect(owner).to.have.property('id', userId.toString())
+          expect(owner).to.have.property('githubId', userGithubId.toString())
         })
     })
   })

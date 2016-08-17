@@ -398,6 +398,50 @@ describe('Stripe', function () {
     })
   })
 
+  describe('getCustomer', () => {
+    let getCustomerStub
+    let customer = {}
+    let stripeCustomerId = 'cus_23429'
+
+    beforeEach('Stub out methods', () => {
+      getCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
+    })
+    afterEach('Restore methods', () => {
+      getCustomerStub.restore()
+    })
+
+    it('should throw an error if no `stripeCustomerId` is passed', done => {
+      Stripe.getCustomer(null)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceOf(EntityNotFoundError)
+          expect(err.message).to.match(/stripeCustomerId/i)
+          done()
+        })
+    })
+
+    it('should retrive the customer', () => {
+      return Stripe.getCustomer(stripeCustomerId)
+        .then(res => {
+          sinon.assert.calledOnce(getCustomerStub)
+          sinon.assert.calledWithExactly(getCustomerStub, stripeCustomerId)
+          expect(res).to.equal(customer)
+        })
+    })
+
+    it('should throw any other errors', done => {
+      let thrownErr = new Error()
+      getCustomerStub.rejects(thrownErr)
+
+      Stripe.getCustomer(stripeCustomerId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).equal(thrownErr)
+          done()
+        })
+    })
+  })
+
   describe('getPlanIdForOrganizationBasedOnCurrentUsage', () => {
     let getAllInstancesForUserByGithubIdStub
     let orgGithubId
