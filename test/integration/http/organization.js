@@ -4,6 +4,8 @@ require('loadenv')()
 const Promise = require('bluebird')
 const expect = require('chai').expect
 
+const stripeClient = require('util/stripe').stripeClient
+
 const superagentPromisePlugin = require('superagent-promise-plugin')
 const request = superagentPromisePlugin.patch(require('superagent'))
 superagentPromisePlugin.Promise = Promise
@@ -260,6 +262,99 @@ describe('OrganizationRouter Integration Test', () => {
           expect(nextPlan.price).to.be.a('number')
           expect(nextPlan.maxConfigurations).to.be.a('number')
           expect(nextPlan.userCount).to.be.a('number')
+        })
+    })
+  })
+
+  describe('#getInvoices', () => {
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+    let orgId = org.id
+    let orgGithubId = org.githubId
+    let stripeCustomerId
+    let stripeTokenId
+    let stripeInvoice
+    let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
+    let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
+
+    before('Create customer, subscription, invoice and get event', function () {
+      this.timeout(5000)
+      return stripeClient.tokens.create({ // Create token. Customer needs token to pay
+        card: {
+          number: '4242424242424242',
+          exp_month: 12,
+          exp_year: 2017,
+          cvc: '123'
+        }
+      })
+      .then(function createStripeTokenForPaymentMethod (stripeToken) {
+        // Create new customer with payment method
+        stripeTokenId = stripeToken.id
+        return stripeClient.customers.create({
+          description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
+          source: stripeTokenId
+        })
+      })
+      .then(function createSubscription (stripeCustomer) {
+        // Create new subscription and create charge right now
+        // This will automatically create an invoice
+        stripeCustomerId = stripeCustomer.id
+        return stripeClient.subscriptions.create({
+          customer: stripeCustomerId,
+          plan: 'runnable-basic',
+          trial_end: 'now'
+        })
+      })
+      .then(function findInvoice (stripeSubscription) {
+        // Find the invoice for charge
+        return stripeClient.invoices.list({
+          customer: stripeCustomerId
+        })
+      })
+      .then(res => {
+        stripeInvoice = res.data[0]
+        return stripeInvoice
+      })
+      .then(invoice => {
+        return stripeClient.invoices.update(invoice.id, {
+          metadata: {
+            paymentMethodOwnerId: userId,
+            paymentMethodOwnerGithubId: userGithubId
+          }
+        })
+      })
+    })
+    after('Clean up Stripe', () => {
+      // Deleting the customer deletes the subscription
+      return stripeClient.customers.del(stripeCustomerId)
+    })
+
+    // Big Poppa Mock
+    before('Stub out big-poppa calls', done => {
+      // Update customer ID in order to be able to query subscription correctly
+      org.stripeCustomerId = stripeCustomerId
+      bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
+        status: 200,
+        body: org
+      })
+      bigPoppaAPI.start(done)
+    })
+    after(done => {
+      bigPoppaAPI.restore()
+      bigPoppaAPI.stop(done)
+    })
+
+    it('should fetch all invoices for an organization', () => {
+      return request
+        .get(`http://localhost:${process.env.PORT}/organization/${orgId}/invoices`)
+        .then(res => {
+          expect(res).to.have.deep.property('body.invoices')
+          expect(res.body.invoices).to.be.an('array')
+          expect(res.body.invoices).to.have.lengthOf(1)
+          let invoice = res.body.invoices[0]
+          expect(invoice).to.have.deep.property('paidBy.id', userId)
+          expect(invoice).to.have.deep.property('paidBy.githubId', userGithubId)
+          expect(invoice).to.have.property('total')
+          expect(invoice).to.have.property('periodEnd')
         })
     })
   })
