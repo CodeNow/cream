@@ -6,8 +6,10 @@ require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
 
 const express = require('express')
+const moment = require('moment')
 
 const OrganizationWithStripeCustomerIdFixture = require('../../../fixtures/big-poppa/organization-with-stripe-customer-id')
+const InvoiceFixture = require('../../../fixtures/stripe/invoice')
 
 const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
@@ -35,18 +37,92 @@ describe('HTTP /organization', () => {
 
   describe('#getInvoices', () => {
     let requestStub
+    let getOrganizationStub
+    let getInvoicesStub
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+    let orgId = org.id
+    let stripeCustomerId = org.stripeCustomerId
+    let invoice = Object.assign({}, InvoiceFixture)
+    let userId = +(invoice.metadata.paymentMethodOwnerId)
+    let userGithubId = +(invoice.metadata.paymentMethodOwnerGithubId)
+    let periodEnd = moment(invoice.period_end, 'X')
 
     beforeEach(() => {
-      requestStub = { query: {} }
+      requestStub = { params: { id: orgId } }
+      org = { stripeCustomerId: stripeCustomerId }
+      getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
+      getInvoicesStub = sinon.stub(stripe, 'getInvoicesForOrg').resolves({ data: [invoice] })
+    })
+    afterEach('Restore stubs', () => {
+      getOrganizationStub.restore()
+      getInvoicesStub.restore()
     })
 
-    it('should call `status` and `send`', () => {
+    it('should get the organization', () => {
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getOrganizationStub)
+          sinon.assert.calledWithExactly(getOrganizationStub, orgId)
+        })
+    })
+
+    it('should get the invoices from Stripe', () => {
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getInvoicesStub)
+          sinon.assert.calledWithExactly(getInvoicesStub, stripeCustomerId)
+        })
+    })
+
+    it('should return an array of invoices with the necesary propreties', () => {
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          let body = responseStub.json.firstCall.args[0]
+          expect(body).to.have.property('invoices')
+          expect(body.invoices).to.be.an('array')
+          expect(body.invoices).to.have.lengthOf(1)
+          let resInvoice = body.invoices[0]
+          expect(resInvoice).to.be.an('object')
+          expect(resInvoice.total).to.equal(invoice.total)
+          expect(resInvoice.periodEnd).to.equal(periodEnd.toISOString())
+          expect(resInvoice.paidBy).to.be.an('object')
+          expect(resInvoice.paidBy.id).to.equal(userId)
+          expect(resInvoice.paidBy.githubId).to.equal(userGithubId)
+        })
+    })
+
+    it('should not return any potentially sensitive properties', () => {
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          let body = responseStub.json.firstCall.args[0]
+          let resInvoice = body.invoices[0]
+          expect(resInvoice).to.be.an('object')
+          expect(resInvoice).to.not.have.property('id')
+          expect(resInvoice).to.not.have.property('object')
+          expect(resInvoice).to.not.have.property('customer')
+          expect(resInvoice).to.not.have.property('charge')
+          expect(resInvoice).to.not.have.property('subscription')
+        })
+    })
+
+    it('should return an empty array if no `response.data` is defined', () => {
+      getInvoicesStub.resolves({})
+
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          let body = responseStub.json.firstCall.args[0]
+          expect(body).to.have.property('invoices')
+          expect(body.invoices).to.be.an('array')
+          expect(body.invoices).to.have.lengthOf(0)
+        })
+    })
+
+    it('should call `status` and `json`', () => {
       return OrganizationRouter.getInvoices(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 501)
-          sinon.assert.calledOnce(responseStub.send)
-          sinon.assert.calledWith(responseStub.send, 'Not yet implemented')
+          sinon.assert.calledWithExactly(responseStub.status, 200)
+          sinon.assert.calledOnce(responseStub.json)
         })
     })
   })

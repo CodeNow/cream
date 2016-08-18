@@ -274,17 +274,18 @@ describe('Stripe', function () {
         })
     })
 
-    it('should throw an error if the org has no `stripeCustomerId`', () => {
+    it('should throw an error if the org has no `stripeCustomerId`', done => {
       delete org.stripeCustomerId
 
       Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
         .asCallback(err => {
           expect(err).to.exist
           expect(err.message).to.match(/stripeCustomerId/i)
+          done()
         })
     })
 
-    it('should throw any errors throws by the client', () => {
+    it('should throw any errors throws by the client', done => {
       let thrownErr = new Error()
       updateCustomerStub.rejects(thrownErr)
 
@@ -292,6 +293,7 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
         })
     })
   })
@@ -336,7 +338,7 @@ describe('Stripe', function () {
         })
     })
 
-    it('should throw any errors throws by the client', () => {
+    it('should throw any errors throws by the client', done => {
       let thrownErr = new Error()
       _updateInvoiceMetadataStub.rejects(thrownErr)
 
@@ -344,6 +346,7 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
         })
     })
   })
@@ -386,7 +389,7 @@ describe('Stripe', function () {
         })
     })
 
-    it('should throw any errors throws by the client', () => {
+    it('should throw any errors throws by the client', done => {
       let thrownErr = new Error()
       updateInvoiceStub.rejects(thrownErr)
 
@@ -394,6 +397,7 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
         })
     })
   })
@@ -858,7 +862,7 @@ describe('Stripe', function () {
         })
     })
 
-    it('should throw any errors throws by the client', () => {
+    it('should throw any errors throws by the client', done => {
       let thrownErr = new Error()
       getEventStub.rejects(thrownErr)
 
@@ -866,6 +870,54 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('getInvoicesForOrg', () => {
+    let getInvoicesStub
+    let invoices = []
+
+    beforeEach('Stub out method', () => {
+      getInvoicesStub = sinon.stub(stripeClient.invoices, 'list').resolves(invoices)
+    })
+
+    afterEach('Restore stub', () => {
+      getInvoicesStub.restore()
+    })
+
+    it('should return the retrieved event', () => {
+      return Stripe.getInvoicesForOrg(stripeCustomerId)
+        .then(r => {
+          expect(r).to.equal(invoices)
+          sinon.assert.calledOnce(getInvoicesStub)
+          sinon.assert.calledWithExactly(
+            getInvoicesStub,
+            { customer: stripeCustomerId, limit: 100 }
+          )
+        })
+    })
+
+    it('should throw an error if no `stripeCustomerId` is passed', done => {
+      Stripe.getInvoicesForOrg(null)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceOf(EntityNotFoundError)
+          expect(err.message).to.match(/stripeCustomerId/i)
+          done()
+        })
+    })
+
+    it('should throw any errors throws by the client', done => {
+      let thrownErr = new Error()
+      getInvoicesStub.rejects(thrownErr)
+
+      Stripe.getInvoicesForOrg(stripeCustomerId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
         })
     })
   })
