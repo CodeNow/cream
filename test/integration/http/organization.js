@@ -244,10 +244,10 @@ describe('OrganizationRouter Integration Test', () => {
       return request
         .get(`http://localhost:${process.env.PORT}/organization/${orgId}/plan`)
         .then(res => {
-          expect(res.body).to.have.deep.property('current.plan')
-          expect(res.body).to.have.deep.property('next.plan')
-          let currentPlan = res.body.current.plan
-          let nextPlan = res.body.next.plan
+          expect(res.body).to.have.deep.property('current')
+          expect(res.body).to.have.deep.property('next')
+          let currentPlan = res.body.current
+          let nextPlan = res.body.next
           expect(currentPlan).to.be.an('object')
           expect(nextPlan).to.be.an('object')
 

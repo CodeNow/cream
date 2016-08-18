@@ -142,8 +142,8 @@ describe('HTTP /organization', () => {
     it('should return a propertly formatted `current` plan', () => {
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
-          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current.plan')
-          let currentPlan = responseStub.json.firstCall.args[0].current.plan
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current')
+          let currentPlan = responseStub.json.firstCall.args[0].current
           expect(currentPlan).to.be.an('object')
           expect(currentPlan).to.have.property('id', subscriptionPlanId)
           expect(currentPlan).to.have.property('price', currentStripePlan.price)
@@ -155,8 +155,8 @@ describe('HTTP /organization', () => {
     it('should return a propertly formatted `current` plan', () => {
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
-          expect(responseStub).to.have.deep.property('json.firstCall.args[0].next.plan')
-          let nextPlan = responseStub.json.firstCall.args[0].next.plan
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].next')
+          let nextPlan = responseStub.json.firstCall.args[0].next
           expect(nextPlan).to.be.an('object')
           expect(nextPlan).to.have.property('id', planId)
           expect(nextPlan).to.have.property('price', nextStripePlan.price)
@@ -170,8 +170,8 @@ describe('HTTP /organization', () => {
 
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
-          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current.plan')
-          let currentPlan = responseStub.json.firstCall.args[0].current.plan
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].current')
+          let currentPlan = responseStub.json.firstCall.args[0].current
           expect(currentPlan).to.be.an('object')
           expect(currentPlan).to.have.property('id', subscriptionPlanId)
           expect(currentPlan).to.have.property('userCount', null)
