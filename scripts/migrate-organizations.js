@@ -69,5 +69,8 @@ Promise.resolve()
       orgsSuccsefullyUpdated: orgsSuccsefullyUpdated
     }, 'Migration completed')
   })
-  .then(process.exit)
+  .catch(err => {
+    logger.error({ err: err }, 'Error creating and updating users')
+  })
+  .finally(process.exit)
 
