@@ -15,7 +15,8 @@
     "test-functional": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/functional/",
     "test-integration": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
     "start-worker": "NODE_PATH=./lib node lib/workers",
-    "start-http": "NODE_PATH=./lib node lib/http"
+    "start-http": "NODE_PATH=./lib node lib/http",
+    "migrate-organizations": "NODE_PATH=./lib node scripts/migrate-organizations"
   },
   "repository": {
     "type": "git",
