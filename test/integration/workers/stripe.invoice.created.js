@@ -26,10 +26,11 @@ const httpServer = require('http/server')
 
 describe('#stripe.invoice.created Integration Test', () => {
   let publisher
-  let orgId = OrganizationWithStripeCustomerIdFixture.id
-  let orgGithubId = OrganizationWithStripeCustomerIdFixture.githubId
-  let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
-  let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
+  let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+  let orgId = org.id
+  let orgGithubId = org.githubId
+  let userId = org.users[0].id
+  let userGithubId = org.users[0].githubId
   let stripeCustomerId
   let stripeInvoiceId
   let stripeEvent
@@ -132,10 +133,10 @@ describe('#stripe.invoice.created Integration Test', () => {
   // Big Poppa Mock
   before('Stub out big-poppa calls', done => {
     // Update customer ID in order to be able to query subscription correctly
-    OrganizationWithStripeCustomerIdFixture.stripeCustomerId = stripeCustomerId
+    org.stripeCustomerId = stripeCustomerId
     bigPoppaAPI.stub('GET', `/organization/?stripeCustomerId=${stripeCustomerId}`).returns({
       status: 200,
-      body: [OrganizationWithStripeCustomerIdFixture]
+      body: [org]
     })
     bigPoppaAPI.start(done)
   })
