@@ -105,6 +105,18 @@ describe('HTTP /organization', () => {
         })
     })
 
+    it('should return an empty array if no `response.data` is defined', () => {
+      getInvoicesStub.resolves({})
+
+      return OrganizationRouter.getInvoices(requestStub, responseStub)
+        .then(() => {
+          let body = responseStub.json.firstCall.args[0]
+          expect(body).to.have.property('invoices')
+          expect(body.invoices).to.be.an('array')
+          expect(body.invoices).to.have.lengthOf(0)
+        })
+    })
+
     it('should call `status` and `json`', () => {
       return OrganizationRouter.getInvoices(requestStub, responseStub)
         .then(() => {
