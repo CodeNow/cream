@@ -12,7 +12,7 @@ const CreateOrganizationInStripeAndStartTrial = require('workers/organization.pl
 const UpdatePlan = require('workers/organization.plan.update')
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
-console.log(process.env)
+const isDryRun = process.env.DRY_RUN
 
 let orgIds = []
 let orgsSuccsefullyStartedInTrial = []
@@ -32,6 +32,7 @@ Promise.resolve()
   .map(function startTrialForAllOrgs (org) {
     orgIds.push(org.id)
     logger.info({ org: org }, 'startTrialForAllOrgs')
+    if (isDryRun) return org
     return CreateOrganizationInStripeAndStartTrial({
       organization: {
         id: org.id
@@ -49,6 +50,7 @@ Promise.resolve()
   .map(function updateNumberOfUsersInOrg (org) {
     orgsSuccsefullyStartedInTrial.push(org.id)
     logger.info({ org: org }, 'startTrialForAllOrgs')
+    if (isDryRun) return org
     return UpdatePlan({
       organization: {
         id: org.id
@@ -61,6 +63,7 @@ Promise.resolve()
   })
   .then(function logResults () {
     logger.info({
+      isDryRun: isDryRun,
       numberOfOrgs: orgIds.length,
       numberOfOrgsSuccsefullyInTrial: orgsSuccsefullyStartedInTrial.length,
       numberOfOrgsSuccsefullyUpdated: orgsSuccsefullyUpdated.length,
