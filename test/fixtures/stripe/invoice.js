@@ -1,50 +1,47 @@
-'use strict'
-
 module.exports = {
-  'id': 'in_18jbDmLYrJgOrBWzwR43ZgoR',
+  'id': 'in_18jwtvLYrJgOrBWzmwaRPS09',
   'object': 'invoice',
-  'amount_due': 0,
+  'amount_due': 900,
   'application_fee': null,
-  'attempt_count': 0,
+  'attempt_count': 1,
   'attempted': true,
-  'charge': null,
+  'charge': 'ch_18jwtvLYrJgOrBWzaFu19xHa',
   'closed': true,
   'currency': 'usd',
-  'customer': 'cus_91eWfwFYEfmsi9',
-  'date': 1471467910,
+  'customer': 'cus_920vB5MpzORwlt',
+  'date': 1471551247,
   'description': null,
   'discount': null,
   'ending_balance': 0,
   'forgiven': false,
   'lines': {
+    'object': 'list',
     'data': [
       {
-        'id': 'sub_91eWc3V8HXsJqk',
+        'id': 'sub_920vG1OneO9JbA',
         'object': 'line_item',
-        'amount': 0,
+        'amount': 900,
         'currency': 'usd',
         'description': null,
         'discountable': true,
-        'livemode': true,
-        'metadata': {
-        },
+        'livemode': false,
+        'metadata': {},
         'period': {
-          'start': 1471467910,
-          'end': 1472677510
+          'start': 1471551247,
+          'end': 1474229647
         },
         'plan': {
-          'id': 'runnable-premium',
+          'id': 'runnable-basic',
           'object': 'plan',
-          'amount': 9900,
-          'created': 1470016496,
+          'amount': 900,
+          'created': 1470016403,
           'currency': 'usd',
           'interval': 'month',
           'interval_count': 1,
           'livemode': false,
-          'metadata': {
-          },
-          'name': 'Premium',
-          'statement_descriptor': 'Single user - Premium',
+          'metadata': {},
+          'name': 'Basic',
+          'statement_descriptor': 'Single User - BASIC',
           'trial_period_days': 14
         },
         'proration': false,
@@ -53,26 +50,26 @@ module.exports = {
         'type': 'subscription'
       }
     ],
+    'has_more': false,
     'total_count': 1,
-    'object': 'list',
-    'url': '/v1/invoices/in_18jbDmLYrJgOrBWzwR43ZgoR/lines'
+    'url': '/v1/invoices/in_18jwtvLYrJgOrBWzmwaRPS09/lines'
   },
   'livemode': false,
   'metadata': {
-    'paymentMethodOwnerId': '1',
+    'paymentMethodOwnerId': '76',
     'paymentMethodOwnerGithubId': '1981198'
   },
   'next_payment_attempt': null,
   'paid': true,
-  'period_end': 1471467910,
-  'period_start': 1471467910,
+  'period_end': 1471551247,
+  'period_start': 1471551247,
   'receipt_number': null,
   'starting_balance': 0,
   'statement_descriptor': null,
-  'subscription': 'sub_91eWc3V8HXsJqk',
-  'subtotal': 0,
+  'subscription': 'sub_920vG1OneO9JbA',
+  'subtotal': 900,
   'tax': null,
   'tax_percent': null,
-  'total': 0,
-  'webhooks_delivered_at': 1471467910
+  'total': 900,
+  'webhooks_delivered_at': 1471551247
 }

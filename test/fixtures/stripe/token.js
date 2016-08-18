@@ -1,0 +1,33 @@
+module.exports = {
+  'id': 'tok_18jwtuLYrJgOrBWzqmhCGcBr',
+  'object': 'token',
+  'card': {
+    'id': 'card_18jwtuLYrJgOrBWzS3XeRhIE',
+    'object': 'card',
+    'address_city': null,
+    'address_country': null,
+    'address_line1': null,
+    'address_line1_check': null,
+    'address_line2': null,
+    'address_state': null,
+    'address_zip': null,
+    'address_zip_check': null,
+    'brand': 'Visa',
+    'country': 'US',
+    'cvc_check': 'unchecked',
+    'dynamic_last4': null,
+    'exp_month': 12,
+    'exp_year': 2017,
+    'fingerprint': 'cl7P4EU6Ja2YhWYn',
+    'funding': 'credit',
+    'last4': '4242',
+    'metadata': {},
+    'name': null,
+    'tokenization_method': null
+  },
+  'client_ip': '208.72.142.42',
+  'created': 1471551246,
+  'livemode': false,
+  'type': 'card',
+  'used': false
+}
