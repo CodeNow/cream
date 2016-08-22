@@ -43,8 +43,8 @@ describe('HTTP /organization', () => {
     let orgId = org.id
     let stripeCustomerId = org.stripeCustomerId
     let invoice = Object.assign({}, InvoiceFixture)
-    let userId = +(invoice.metadata.paymentMethodOwnerId)
-    let userGithubId = +(invoice.metadata.paymentMethodOwnerGithubId)
+    let userId = parseInt(invoice.metadata.paymentMethodOwnerId, 10)
+    let userGithubId = parseInt(invoice.metadata.paymentMethodOwnerGithubId, 10)
     let periodEnd = moment(invoice.period_end, 'X')
 
     beforeEach(() => {
