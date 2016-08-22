@@ -1,10 +1,10 @@
 module.exports = {
-  'id': 'cus_920vB5MpzORwlt',
+  'id': 'cus_93Wtm3jOX5MrRB',
   'object': 'customer',
   'account_balance': 0,
-  'created': 1471551246,
+  'created': 1471900783,
   'currency': null,
-  'default_source': 'card_18jwtuLYrJgOrBWzS3XeRhIE',
+  'default_source': 'card_18lPpaLYrJgOrBWzlZ9YjM5R',
   'delinquent': false,
   'description': 'Customer for organizationId: 66 / githubId: 2828361',
   'discount': null,
@@ -19,7 +19,7 @@ module.exports = {
     'object': 'list',
     'data': [
       {
-        'id': 'card_18jwtuLYrJgOrBWzS3XeRhIE',
+        'id': 'card_18lPpaLYrJgOrBWzlZ9YjM5R',
         'object': 'card',
         'address_city': null,
         'address_country': null,
@@ -31,7 +31,7 @@ module.exports = {
         'address_zip_check': null,
         'brand': 'Visa',
         'country': 'US',
-        'customer': 'cus_920vB5MpzORwlt',
+        'customer': 'cus_93Wtm3jOX5MrRB',
         'cvc_check': 'pass',
         'dynamic_last4': null,
         'exp_month': 12,
@@ -46,13 +46,13 @@ module.exports = {
     ],
     'has_more': false,
     'total_count': 1,
-    'url': '/v1/customers/cus_920vB5MpzORwlt/sources'
+    'url': '/v1/customers/cus_93Wtm3jOX5MrRB/sources'
   },
   'subscriptions': {
     'object': 'list',
     'data': [],
     'has_more': false,
     'total_count': 0,
-    'url': '/v1/customers/cus_920vB5MpzORwlt/subscriptions'
+    'url': '/v1/customers/cus_93Wtm3jOX5MrRB/subscriptions'
   }
 }

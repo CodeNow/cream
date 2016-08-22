@@ -84,7 +84,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
       stripeCustomerId = stripeCustomer.id
       return stripeClient.subscriptions.create({
         customer: stripeCustomerId,
-        plan: 'runnable-basic',
+        plan: 'runnable-starter',
         trial_end: 'now'
       })
     })

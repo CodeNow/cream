@@ -93,7 +93,7 @@ describe('#stripe.invoice.created Integration Test', () => {
       if (instances.length > 15) {
         planId = 'runnable-plus'
       } else {
-        planId = 'runnable-basic'
+        planId = 'runnable-starter'
       }
       // Create new subscription and create charge right now
       // This will automatically create an invoice

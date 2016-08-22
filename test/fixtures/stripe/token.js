@@ -1,8 +1,8 @@
 module.exports = {
-  'id': 'tok_18jwtuLYrJgOrBWzqmhCGcBr',
+  'id': 'tok_18lPpaLYrJgOrBWzwRx2kVY5',
   'object': 'token',
   'card': {
-    'id': 'card_18jwtuLYrJgOrBWzS3XeRhIE',
+    'id': 'card_18lPpaLYrJgOrBWzlZ9YjM5R',
     'object': 'card',
     'address_city': null,
     'address_country': null,
@@ -26,7 +26,7 @@ module.exports = {
     'tokenization_method': null
   },
   'client_ip': '208.72.142.42',
-  'created': 1471551246,
+  'created': 1471900782,
   'livemode': false,
   'type': 'card',
   'used': false
