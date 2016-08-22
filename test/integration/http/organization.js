@@ -119,8 +119,8 @@ describe('OrganizationRouter Integration Test', () => {
           return stripe.stripeClient.customers.retrieve(stripeCustomerId)
         })
         .then(stripeCustomer => {
-          expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerId', userId.toString())
-          expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerGithubId', userGithubId.toString())
+          expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerId', userId)
+          expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerGithubId', userGithubId)
           expect(stripeCustomer).to.have.property('default_source', stripeCardId)
         })
     })
