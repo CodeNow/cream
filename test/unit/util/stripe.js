@@ -967,4 +967,73 @@ describe('Stripe', function () {
         })
     })
   })
+
+  describe('getDiscount', () => {
+    let getCustomerStub
+    const metadata = { hello: 'world' }
+    const discount = {
+      start: 123,
+      end: 234,
+      coupon: {
+        amount_off: null,
+        percent_off: 50,
+        duration: 'repeating',
+        duration_in_months: 6,
+        valid: true,
+        metadata: JSON.stringify(metadata)
+      }
+    }
+    let customer
+    let stripeCustomerId = 'cus_23429'
+
+    beforeEach('Stub out methods', () => {
+      customer = { discount: discount }
+      getCustomerStub = sinon.stub(Stripe, 'getCustomer').resolves(customer)
+    })
+    afterEach('Restore methods', () => {
+      getCustomerStub.restore()
+    })
+
+    it('should retrive the discount', () => {
+      return Stripe.getDiscount(stripeCustomerId)
+        .then(res => {
+          sinon.assert.calledOnce(getCustomerStub)
+          sinon.assert.calledWithExactly(getCustomerStub, stripeCustomerId)
+        })
+    })
+
+    it('should return `null` if there is not discount', () => {
+      customer.discount = null
+      return Stripe.getDiscount(stripeCustomerId)
+        .then(res => {
+          expect(res).to.equal(null)
+        })
+    })
+
+    it('should return an newly formatted object', () => {
+      return Stripe.getDiscount(stripeCustomerId)
+        .then(res => {
+          expect(res).to.not.equal(discount)
+          expect(res.start).to.equal(discount.start)
+          expect(res.end).to.equal(discount.end)
+          expect(res.coupon.amountOff).to.equal(discount.coupon.amount_off)
+          expect(res.coupon.percentOff).to.equal(discount.coupon.percent_off)
+          expect(res.coupon.duration).to.equal(discount.coupon.duration)
+          expect(res.coupon.durationInMonths).to.equal(discount.coupon.duration_in_months)
+          expect(res.coupon.valid).to.equal(discount.coupon.valid)
+        })
+    })
+
+    it('should throw any other errors', done => {
+      let thrownErr = new Error()
+      getCustomerStub.rejects(thrownErr)
+
+      Stripe.getDiscount(stripeCustomerId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).equal(thrownErr)
+          done()
+        })
+    })
+  })
 })
