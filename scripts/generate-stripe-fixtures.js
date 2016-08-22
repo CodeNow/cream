@@ -55,7 +55,7 @@ Promise.resolve()
     stripeCustomerId = stripeCustomer.id
     return stripeClient.subscriptions.create({
       customer: stripeCustomer.id,
-      plan: 'runnable-basic',
+      plan: 'runnable-starter',
       trial_end: 'now'
     })
   })

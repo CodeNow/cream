@@ -33,7 +33,7 @@ describe('Stripe', function () {
     let getPlanIdStub
     let createSubscriptionStub
     let users
-    let planId = 'runnable-basic'
+    let planId = 'runnable-starter'
     let stripeSubscription
     let stripeCustomer
 
@@ -173,7 +173,7 @@ describe('Stripe', function () {
     let _getSubscriptionForOrganizationStub
     let getPlanIdForOrganizationBasedOnCurrentUsageStub
     let updateSubsriptionStub
-    let planId = 'runnable-basic'
+    let planId = 'runnable-starter'
     let subscriptionId = 'sub_18i5aXLYrJgOrBWzYNR9xq87'
 
     beforeEach('Stub out method', () => {
@@ -469,21 +469,21 @@ describe('Stripe', function () {
         })
     })
 
-    it('should return `runnable-basic` if there are 0 instances', function () {
+    it('should return `runnable-starter` if there are 0 instances', function () {
       getAllInstancesForUserByGithubIdStub.resolves([])
 
       return Stripe.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
-          expect(planId).to.equal('runnable-basic')
+          expect(planId).to.equal('runnable-starter')
         })
     })
 
-    it('should return `runnable-basic` if there are 2 instances', function () {
+    it('should return `runnable-starter` if there are 2 instances', function () {
       getAllInstancesForUserByGithubIdStub.resolves(new Array(2))
 
       return Stripe.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
-          expect(planId).to.equal('runnable-basic')
+          expect(planId).to.equal('runnable-starter')
         })
     })
 
@@ -643,7 +643,7 @@ describe('Stripe', function () {
   describe('_createSubscription', () => {
     let createSubscriptionStub
     let subscription
-    let planId = 'runnable-basic'
+    let planId = 'runnable-starter'
     let generateObjectForUsersStub
     let users
 

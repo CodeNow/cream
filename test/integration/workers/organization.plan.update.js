@@ -80,7 +80,7 @@ describe('#organiztion.plan.update Integration Test', () => {
       stripeCustomerId = stripeCustomer.id
       return stripe.stripeClient.subscriptions.create({
         customer: stripeCustomerId,
-        plan: 'runnable-basic'
+        plan: 'runnable-starter'
       })
     })
     .then(stripeSubscription => {
@@ -135,7 +135,7 @@ describe('#organiztion.plan.update Integration Test', () => {
       .then(function checkStripeForUpdatePlan () {
         return stripe.stripeClient.subscriptions.retrieve(stripeSubscriptionId)
           .then(subscription => {
-            expect(subscription).to.have.deep.property('plan.id', 'runnable-basic')
+            expect(subscription).to.have.deep.property('plan.id', 'runnable-starter')
             expect(subscription).to.have.property('quantity', users.length)
             let userGithubIds = JSON.stringify(users.map(x => x.githubId))
             expect(subscription).to.have.deep.property('metadata.users', userGithubIds)
