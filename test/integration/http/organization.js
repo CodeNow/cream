@@ -212,7 +212,8 @@ describe('OrganizationRouter Integration Test', () => {
 
     before('Create customer', () => {
       return stripe.stripeClient.customers.create({
-        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
+        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
+        coupon: 'Beta'
       })
       .then(stripeCustomer => {
         stripeCustomerId = stripeCustomer.id
@@ -248,8 +249,10 @@ describe('OrganizationRouter Integration Test', () => {
         .then(res => {
           expect(res.body).to.have.deep.property('current')
           expect(res.body).to.have.deep.property('next')
+          expect(res.body).to.have.deep.property('discount')
           let currentPlan = res.body.current
           let nextPlan = res.body.next
+          let discount = res.body.discount
           expect(currentPlan).to.be.an('object')
           expect(nextPlan).to.be.an('object')
 
@@ -262,6 +265,14 @@ describe('OrganizationRouter Integration Test', () => {
           expect(nextPlan.price).to.be.a('number')
           expect(nextPlan.maxConfigurations).to.be.a('number')
           expect(nextPlan.userCount).to.be.a('number')
+
+          expect(discount.end).to.be.a('number')
+          expect(discount.start).to.be.a('number')
+          expect(discount.coupon).to.be.an('object')
+          // Values might change if the coupon is updated
+          expect(discount.coupon.duration).to.equal('repeating')
+          expect(discount.coupon.percentOff).to.equal(50)
+          expect(discount.coupon.durationInMonths).to.equal(6)
         })
     })
   })
