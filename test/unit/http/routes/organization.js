@@ -396,6 +396,7 @@ describe('HTTP /organization', () => {
     let getOrganizationStub
     let updatePaymentMethodForOrganizationStub
     let updateOrganizationStub
+    let updateDiscountForCustomerStub
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let user = org.users[0]
@@ -416,11 +417,13 @@ describe('HTTP /organization', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
       updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves(org)
       updatePaymentMethodForOrganizationStub = sinon.stub(stripe, 'updatePaymentMethodForOrganization').resolves()
+      updateDiscountForCustomerStub = sinon.stub(stripe, 'updateDiscountForCustomer').resolves()
     })
     afterEach('Restore stub', () => {
       getOrganizationStub.restore()
       updateOrganizationStub.restore()
       updatePaymentMethodForOrganizationStub.restore()
+      updateDiscountForCustomerStub.restore()
     })
 
     it('should call `getOrganization`', () => {
