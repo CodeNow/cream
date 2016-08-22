@@ -43,8 +43,8 @@ describe('HTTP /organization', () => {
     let orgId = org.id
     let stripeCustomerId = org.stripeCustomerId
     let invoice = Object.assign({}, InvoiceFixture)
-    let userId = +(invoice.metadata.paymentMethodOwnerId)
-    let userGithubId = +(invoice.metadata.paymentMethodOwnerGithubId)
+    let userId = parseInt(invoice.metadata.paymentMethodOwnerId, 10)
+    let userGithubId = parseInt(invoice.metadata.paymentMethodOwnerGithubId, 10)
     let periodEnd = moment(invoice.period_end, 'X')
 
     beforeEach(() => {
@@ -137,6 +137,7 @@ describe('HTTP /organization', () => {
     let orgGithubId = org.githubId
     let orgStripeCustomerId = org.stripeCustomerId
     let getPlanStub
+    let getDiscountStub
     let subscription
     let planId = 'runnable-standard'
     let subscriptionPlanId = 'runnable-plus'
@@ -171,6 +172,7 @@ describe('HTTP /organization', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
       getSubscriptionForOrganizationStub = sinon.stub(stripe, '_getSubscriptionForOrganization').resolves(subscription)
       getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
+      getDiscountStub = sinon.stub(stripe, 'getDiscount').resolves(null)
       getPlanStub = sinon.stub(stripe, 'getPlan')
       getPlanStub.withArgs(planId).resolves(nextStripePlan)
       getPlanStub.withArgs(subscriptionPlanId).resolves(currentStripePlan)
@@ -179,6 +181,7 @@ describe('HTTP /organization', () => {
       getOrganizationStub.restore()
       getSubscriptionForOrganizationStub.restore()
       getPlanIdForOrganizationBasedOnCurrentUsageStub.restore()
+      getDiscountStub.restore()
       getPlanStub.restore()
     })
 
@@ -195,6 +198,14 @@ describe('HTTP /organization', () => {
         .then(() => {
           sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
           sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeCustomerId)
+        })
+    })
+
+    it('should get the discount for the org', () => {
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(() => {
+          sinon.assert.calledOnce(getDiscountStub)
+          sinon.assert.calledWithExactly(getDiscountStub, orgStripeCustomerId)
         })
     })
 
@@ -251,6 +262,22 @@ describe('HTTP /organization', () => {
           expect(currentPlan).to.be.an('object')
           expect(currentPlan).to.have.property('id', subscriptionPlanId)
           expect(currentPlan).to.have.property('userCount', null)
+        })
+    })
+
+    it('should return a discount if a discount exists', () => {
+      const discount = {
+        start: 1,
+        end: 2,
+        coupon: {}
+      }
+      getDiscountStub.resolves(discount)
+
+      return OrganizationRouter.getPlan(requestStub, responseStub)
+        .then(response => {
+          expect(responseStub).to.have.deep.property('json.firstCall.args[0].discount')
+          let discountResponse = responseStub.json.firstCall.args[0].discount
+          expect(discountResponse).to.equal(discount)
         })
     })
 
