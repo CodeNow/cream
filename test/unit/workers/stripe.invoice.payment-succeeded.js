@@ -29,7 +29,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
   let activePeriodEnd = moment(1471050735, 'X')
 
   beforeEach(() => {
-    validJob = { tid: tid, id: eventId }
+    validJob = { tid: tid, stripeEventId: eventId }
     stripeEvent = {
       id: eventId,
       type: 'invoice.payment_succeeded',

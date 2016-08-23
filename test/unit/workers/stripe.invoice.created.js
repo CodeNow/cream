@@ -30,7 +30,7 @@ describe('#stripe.invoice.created', () => {
   let stripeEvent
 
   beforeEach(() => {
-    validJob = { id: eventId }
+    validJob = { stripeEventId: eventId }
     stripeEvent = {
       id: eventId,
       type: 'invoice.created', // Don't allow any other type of event
@@ -108,7 +108,7 @@ describe('#stripe.invoice.created', () => {
           sinon.assert.calledOnce(getEventStub)
           sinon.assert.calledWithExactly(
             getEventStub,
-            validJob.id
+            validJob.stripeEventId
           )
         })
     })
