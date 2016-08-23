@@ -266,8 +266,8 @@ describe('OrganizationRouter Integration Test', () => {
           expect(nextPlan.maxConfigurations).to.be.a('number')
           expect(nextPlan.userCount).to.be.a('number')
 
-          expect(discount.end).to.be.a('number')
-          expect(discount.start).to.be.a('number')
+          expect(discount.end).to.be.a('string')
+          expect(discount.start).to.be.a('string')
           expect(discount.coupon).to.be.an('object')
           // Values might change if the coupon is updated
           expect(discount.coupon.duration).to.equal('repeating')

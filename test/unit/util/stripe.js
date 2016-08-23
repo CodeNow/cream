@@ -3,6 +3,7 @@
 const Promise = require('bluebird')
 const sinon = require('sinon')
 const expect = require('chai').expect
+const moment = require('moment')
 require('sinon-as-promised')(Promise)
 
 const runnableClient = require('util/runnable-api-client')
@@ -971,9 +972,11 @@ describe('Stripe', function () {
   describe('getDiscount', () => {
     let getCustomerStub
     const metadata = { hello: 'world' }
+    const discountStart = moment()
+    const discountEnd = moment()
     const discount = {
-      start: 123,
-      end: 234,
+      start: discountStart.format('X'),
+      end: discountEnd.format('X'),
       coupon: {
         amount_off: null,
         percent_off: 50,
@@ -1013,9 +1016,13 @@ describe('Stripe', function () {
     it('should return an newly formatted object', () => {
       return Stripe.getDiscount(stripeCustomerId)
         .then(res => {
-          expect(res).to.not.equal(discount)
-          expect(res.start).to.equal(discount.start)
-          expect(res.end).to.equal(discount.end)
+          let returnIsoString = (m) => {
+            let newMoment = moment(m.format('X'), 'X')
+            return newMoment.toISOString()
+          }
+
+          expect(res.start).to.equal(returnIsoString(discountStart))
+          expect(res.end).to.equal(returnIsoString(discountEnd))
           expect(res.coupon.amountOff).to.equal(discount.coupon.amount_off)
           expect(res.coupon.percentOff).to.equal(discount.coupon.percent_off)
           expect(res.coupon.duration).to.equal(discount.coupon.duration)
