@@ -154,7 +154,7 @@ describe('#stripe.invoice.created Integration Test', () => {
         return stripeEvent.data.object.id === stripeInvoiceId
       })
       publisher.publishEvent('stripe.invoice.created', {
-        id: stripeEvent.id
+        stripeEventId: stripeEvent.id
       })
     })
   })

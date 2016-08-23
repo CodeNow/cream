@@ -139,7 +139,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
         return stripeEvent.data.object.id === stripeInvoice.id
       })
       publisher.publishEvent('stripe.invoice.payment-succeeded', {
-        id: stripeEvent.id
+        stripeEventId: stripeEvent.id
       })
     })
   })
