@@ -971,7 +971,7 @@ describe('Stripe', function () {
 
   describe('getDiscount', () => {
     let getCustomerStub
-    const metadata = { hello: 'world' }
+    const metadata = { hello: 'world', object: JSON.stringify({ wow: '23423' }) }
     const discountStart = moment()
     const discountEnd = moment()
     const discount = {
@@ -983,7 +983,7 @@ describe('Stripe', function () {
         duration: 'repeating',
         duration_in_months: 6,
         valid: true,
-        metadata: JSON.stringify(metadata)
+        metadata: metadata
       }
     }
     let customer
@@ -1028,6 +1028,8 @@ describe('Stripe', function () {
           expect(res.coupon.duration).to.equal(discount.coupon.duration)
           expect(res.coupon.durationInMonths).to.equal(discount.coupon.duration_in_months)
           expect(res.coupon.valid).to.equal(discount.coupon.valid)
+          expect(res.coupon.metadata).to.be.an('object')
+          expect(res.coupon.metadata.hello).to.equal('world')
         })
     })
 
