@@ -11,21 +11,31 @@ const log = require('util/logger').child({ module: 'scripts/clean-up-stripe-cust
 const isDryRun = process.env.DRY_RUN
 
 const getAllStripeCustomers = () => {
+  log.trace('getAllStripeCustomers call')
   let allCustomers = []
 
   const _getAllStripeCustomers = (lastCustomerId) => {
-    return stripeClient.customers.list({ limit: 10, starting_after: lastCustomerId })
+    log.trace('Fetch customers again')
+    let query = { limit: 10 }
+    if (lastCustomerId) {
+      query.starting_after = lastCustomerId
+    }
+    log.trace(query, 'Fetch customers again')
+    return stripeClient.customers.list(query)
       .then(res => {
+        log.trace({ dataLength: res.data.length }, 'Number of customers')
         allCustomers = allCustomers.concat(res.data)
         if (res.has_more) {
+          log.trace('Has more...')
           let lastCustomerId = res.data[res.data.length - 1].id
           return _getAllStripeCustomers(lastCustomerId)
         }
+        log.trace({ allCustomers: allCustomers.length }, 'Number of customers END')
         return
       })
   }
   return _getAllStripeCustomers()
-    .return(allCustomers)
+    .then(() => allCustomers)
 }
 
 const fetchAndDeleteCustomers = (orgIds) => {
@@ -67,4 +77,4 @@ Promise.resolve()
   .finally(function () {
     log.trace('Finished')
     process.exit()
-  })
+  }
