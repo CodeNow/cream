@@ -10,15 +10,36 @@ const log = require('util/logger').child({ module: 'scripts/clean-up-stripe-cust
 
 const isDryRun = process.env.DRY_RUN
 
+const getAllStripeCustomers = () => {
+  let allCustomers = []
+
+  const _getAllStripeCustomers = (lastCustomerId) => {
+    return stripeClient.customers.list({ limit: 10, starting_after: lastCustomerId })
+      .then(res => {
+        allCustomers = allCustomers.concat(res.data)
+        if (res.has_more) {
+          let lastCustomerId = res.data[res.data.length - 1].id
+          return _getAllStripeCustomers(lastCustomerId)
+        }
+        return
+      })
+  }
+  return _getAllStripeCustomers()
+    .return(allCustomers)
+}
+
 const fetchAndDeleteCustomers = (orgIds) => {
   log.trace({ orgIds: orgIds }, 'Fetch customers from Stripe')
-  return stripeClient.customers.list({ limit: 100 })
-    .then(res => {
-      log.trace({ res: res }, 'Response from Stripe')
-      let customers = res.data
+  return getAllStripeCustomers()
+    .then(customers => {
+      log.trace({ customers: customers.length }, 'Response from Stripe')
 
       let customersNotInBigPoppa = customers.filter(customer => orgIds.indexOf(customer.id) === -1)
-      log.trace({ numberOfcustomersNotInBigPoppa: customersNotInBigPoppa.length }, 'Filter customer that are not in Big Poppa')
+      log.trace({
+        numberOfcustomersNotInBigPoppa: customersNotInBigPoppa.length,
+        customers: customers.length,
+        orgIds: orgIds.length
+      }, 'Filter customer that are not in Big Poppa')
       if (customersNotInBigPoppa.length > 0) {
         return Promise.map(customersNotInBigPoppa, customer => {
           log.trace({ customer: customer }, 'Deleting Stripe Customer')
@@ -43,4 +64,7 @@ Promise.resolve()
     return fetchAndDeleteCustomers(orgIds)
   })
   .catch(err => log.error({ err: err }, 'Error'))
-  .finally(process.exit)
+  .finally(function () {
+    log.trace('Finished')
+    process.exit()
+  })
