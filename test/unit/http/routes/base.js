@@ -7,6 +7,7 @@ const expect = require('chai').expect
 
 const Joi = Promise.promisifyAll(require('joi'))
 
+const ValidationError = require('errors/validation-error')
 const BaseRouter = require('http/routes/base')
 
 describe('HTTP Base Router', () => {
@@ -142,8 +143,8 @@ describe('HTTP Base Router', () => {
       )
     })
 
-    it('should throw a 400 error if there is a validation error', () => {
-      let err = new Error('Validation Error')
+    it('should throw a 400 error if there is a Joi error', () => {
+      let err = new Error('Joi Error')
       err.isJoi = true
       BaseRouter.errorHandler(responseStub, err)
       sinon.assert.calledOnce(responseStub.status)
@@ -159,5 +160,20 @@ describe('HTTP Base Router', () => {
       )
     })
   })
-})
 
+  it('should throw a 400 error if there is a validation error', () => {
+    let err = new ValidationError('Bad credit card')
+    BaseRouter.errorHandler(responseStub, err)
+    sinon.assert.calledOnce(responseStub.status)
+    sinon.assert.calledWithExactly(responseStub.status, 400)
+    sinon.assert.calledOnce(responseStub.json)
+    sinon.assert.calledWithExactly(
+      responseStub.json,
+      {
+        statusCode: 400,
+        message: sinon.match(/validation.*error/i),
+        err: err
+      }
+    )
+  })
+})
