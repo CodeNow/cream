@@ -643,7 +643,6 @@ describe('Stripe', function () {
         })
     })
 
-
     it('should throw a StripeError if no Stripe customer is returned', done => {
       createCustomerStub.resolves(null)
 
