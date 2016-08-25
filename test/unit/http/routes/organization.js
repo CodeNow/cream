@@ -516,6 +516,7 @@ describe('HTTP /organization', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/stripecarderror/i)
           expect(err.message).to.match(/bad.*card/i)
           done()
         })
@@ -530,6 +531,7 @@ describe('HTTP /organization', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/stripeinvalidrequesterror/i)
           expect(err.message).to.match(/bad.*request/i)
           done()
         })
