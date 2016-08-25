@@ -15,7 +15,8 @@ const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
 
 const OrganizationRouter = require('http/routes/organization')
-const UserNotPartOfOrganizationError = require('errors/validation-error')
+const ValidationError = require('errors/validation-error')
+const UserNotPartOfOrganizationError = require('errors/user-not-part-of-organization-error')
 
 describe('HTTP /organization', () => {
   let responseStub
@@ -502,6 +503,34 @@ describe('HTTP /organization', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(UserNotPartOfOrganizationError)
+          done()
+        })
+    })
+
+    it('should throw a `ValidationError` if there was a `StripeCardError`', done => {
+      let thrownError = new Error('bad card')
+      thrownError.type = 'StripeCardError'
+      updatePaymentMethodForOrganizationStub.rejects(thrownError)
+
+      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/bad.*card/i)
+          done()
+        })
+    })
+
+    it('should throw a `ValidationError` if there was a `StripeInvalidRequestError`', done => {
+      let thrownError = new Error('bad request')
+      thrownError.type = 'StripeInvalidRequestError'
+      updatePaymentMethodForOrganizationStub.rejects(thrownError)
+
+      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/bad.*request/i)
           done()
         })
     })
