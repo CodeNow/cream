@@ -67,7 +67,8 @@ describe('OrganizationRouter Integration Test', () => {
     let userId = org.users[0].id
     let userGithubId = org.users[0].githubId
 
-    before('Create customer', () => {
+    before('Create customer', function () {
+      this.timeout(4000)
       return stripe.stripeClient.customers.create({
         description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
       })
