@@ -2,8 +2,9 @@
 require('loadenv')()
 
 const Promise = require('bluebird')
+const moment = require('moment')
 
-const log = require('util/log').child({ module: 'scripts/migrage-preview-customers' })
+const log = require('util/logger').child({ module: 'scripts/migrage-preview-customers' })
 const bigPoppa = require('util/big-poppa')
 const rabbitmq = require('util/rabbitmq')
 const runnableAPI = require('util/runnable-api-client')
@@ -60,14 +61,20 @@ Promise.resolve()
       })
       .return(org)
   })
-  .mapSeries(function deleteSubscriptionForOrtgs (org) {
-    orgIds.push(org.id)
+  .mapSeries(function createNewSubscription (org) {
     log.info({ org: org }, 'startTrialForAllOrgs')
     return Stripe.getPlanIdForOrganizationBasedOnCurrentUsage(org.githubId)
       .then(function setPlan (planId) {
         log.trace({ planId: planId, orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'Pland id for org')
         if (isDryRun) return org
         return Stripe._createSubscription(org.stripeCustomerId, org.users, planId)
+        .then(function setNewSubscritpin (subscription) {
+          if (isDryRun) return org
+          let trialEndTimestamp = moment(subscription.trial_end, 'X')
+          return bigPoppa.updateOrganization(org.id, {
+            trialEnd: trialEndTimestamp.toISOString()
+          })
+        })
       })
       .return(org)
   })
