@@ -16,7 +16,6 @@ if (process.env.TEST_STUB_OUT_BIG_POPPA) {
   process.env.BIG_POPPA_HOST = '127.0.0.1:5678'
 }
 
-const RabbitMQ = require('ponos/lib/rabbitmq')
 const bigPoppa = require('util/big-poppa')
 const runnableAPI = require('util/runnable-api-client')
 const stripe = require('util/stripe')
@@ -39,10 +38,6 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   before('Start HTTP server', () => httpServer.start())
   after('Stop HTTP server', () => httpServer.stop())
 
-  // Workers
-  before('Start worker server', () => workerServer.start())
-  after('Stop worker server', () => workerServer.stop())
-
   // Runnable API Client
   before('Login into runnable API', () => runnableAPI.login())
   after('Logout into runnable API', () => runnableAPI.logout())
@@ -51,18 +46,14 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   before(done => bigPoppaAPI.start(done))
   after(done => bigPoppaAPI.stop(done))
 
-  // Connect to RabbitMQ
+  // RabbitMQ
   before('Connect to RabbitMQ', () => {
-    publisher = new RabbitMQ({
-      name: process.env.APP_NAME + '-test',
-      hostname: process.env.RABBITMQ_HOSTNAME,
-      port: process.env.RABBITMQ_PORT,
-      username: process.env.RABBITMQ_USERNAME,
-      password: process.env.RABBITMQ_PASSWORD
-    })
-    return publisher.connect()
+    return testUtil.connectToRabbitMQ(workerServer, [], [])
+      .then(p => { publisher = p })
   })
-  after('Disconnect from RabbitMQ', () => publisher.disconnect())
+  after('Disconnect from RabbitMQ', () => {
+    return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+  })
 
   before('Spy on updateOrganization', () => {
     updateOrganizationSpy = sinon.spy(bigPoppa, 'updateOrganization')
@@ -121,7 +112,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   it('should trigger organization created', function () {
     if (!process.env.TEST_STUB_OUT_BIG_POPPA) return this.skip()
 
-    publisher.publishTask('cream.organization.created', {
+    publisher.publishEvent('organization.created', {
       organization: {
         id: orgId,
         githubId: orgGithubId
