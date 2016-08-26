@@ -60,7 +60,7 @@
     "loadenv": "^2.2.0",
     "lodash": "^4.15.0",
     "moment": "^2.14.1",
-    "ponos": "^4.6.0",
+    "ponos": "^5.0.0",
     "stripe": "^4.9.0"
   },
   "devDependencies": {
