@@ -4,7 +4,6 @@ require('loadenv')()
 const Promise = require('bluebird')
 const expect = require('chai').expect
 const sinon = require('sinon')
-const moment = require('moment')
 
 const MockAPI = require('mehpi')
 const bigPoppaAPI = new MockAPI('5678')
@@ -152,14 +151,6 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
             let metadata = stripeCustomer.metadata
             expect(metadata).to.have.property('organizationId', OrganizationFixture.id.toString())
             expect(metadata).to.have.property('githubId', OrganizationFixture.githubId.toString())
-
-            // Testing BETA discounts (Remove this after September 21)
-            if (moment().isBefore(moment('2016-09-21T07:00:00.000Z'))) {
-              expect(stripeCustomer).to.have.property('discount')
-              expect(stripeCustomer).to.have.deep.property('discount.coupon.id', 'Beta')
-            } else {
-              expect(stripeCustomer).to.not.have.property('discount')
-            }
           })
           .then(function fetchSubscriptions () {
             return stripe.stripeClient.subscriptions.list({ customer: stripeCustomerId })

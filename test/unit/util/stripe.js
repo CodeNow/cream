@@ -10,7 +10,6 @@ const runnableClient = require('util/runnable-api-client')
 const Stripe = require('util/stripe')
 const stripeClient = Stripe.stripeClient
 
-const DiscountService = require('services/discount-service')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const EntityNotFoundError = require('errors/entity-not-found-error')
 const StripeError = require('errors/stripe-error')
@@ -591,17 +590,14 @@ describe('Stripe', function () {
   describe('_createCustomer', () => {
     let createCustomerStub
     let customer
-    let getCouponAtSignUpTimeStub
 
     beforeEach('stub out Stripe API calls', () => {
       customer = { id: 'cus_2342323' }
       createCustomerStub = sinon.stub(stripeClient.customers, 'create').resolves(customer)
-      getCouponAtSignUpTimeStub = sinon.stub(DiscountService, 'getCouponAtSignUpTime').returns(null)
     })
 
     afterEach('restore Stripe API calls', () => {
       createCustomerStub.restore()
-      getCouponAtSignUpTimeStub.restore()
     })
 
     it('should create a customer in Stripe', () => {
@@ -613,27 +609,6 @@ describe('Stripe', function () {
             createCustomerStub,
             {
               description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
-              metadata: {
-                organizationId: orgMock.id,
-                githubId: orgMock.githubId
-              }
-            }
-          )
-        })
-    })
-
-    it('should add a coupon if one is addded', () => {
-      const couponName = 'Beta'
-      getCouponAtSignUpTimeStub.returns(couponName)
-
-      return Stripe._createCustomer(orgMock)
-        .then(res => {
-          expect(res).to.equal(customer)
-          sinon.assert.calledWithExactly(
-            createCustomerStub,
-            {
-              description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
-              coupon: couponName,
               metadata: {
                 organizationId: orgMock.id,
                 githubId: orgMock.githubId
