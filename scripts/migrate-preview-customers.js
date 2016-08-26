@@ -69,7 +69,6 @@ Promise.resolve()
         if (isDryRun) return org
         return Stripe._createSubscription(org.stripeCustomerId, org.users, planId)
         .then(function setNewSubscritpin (subscription) {
-          if (isDryRun) return org
           let trialEndTimestamp = moment(subscription.trial_end, 'X')
           return bigPoppa.updateOrganization(org.id, {
             trialEnd: trialEndTimestamp.toISOString()
