@@ -107,5 +107,5 @@ Promise.resolve()
   })
   .finally(() => {
     log.info('Finished')
-    process.exit()
+    rabbitmq.disconnect()
   })
