@@ -8,11 +8,16 @@ const bigPoppa = require('util/big-poppa')
 const rabbitmq = require('util/rabbitmq')
 const runnableAPI = require('util/runnable-api-client')
 
-const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial')
 const UpdatePlan = require('workers/organization.plan.update')
+const Stripe = require('util/stripe')
 
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const isDryRun = process.env.DRY_RUN
+const TIMESTAMP = process.env.TIMESTAMP // '2016-09-09T18:00:00.000Z'
+
+if (!TIMESTAMP) {
+  log.error('No TIMESTAMP supplied')
+  process.exit()
+}
 
 let orgIds = []
 let deleteStripeCustomerIds = []
@@ -38,7 +43,7 @@ Promise.resolve()
   .filter(function getAllCustomresWithSpecificTrialEnd (org) {
     log.trace({ org: org }, 'getAllCustomresWithSpecificTrialEnd')
     // Get all customers with a trialEnd of ...
-    return org.trialEnd === '2016-09-09T18:00:00.000Z'
+    return org.trialEnd === TIMESTAMP
   })
   .tap(function logOrgs (orgsToRestartTrial) {
     orgIds = orgsToRestartTrial.map(x => x.id)
@@ -48,26 +53,21 @@ Promise.resolve()
     log.trace({ org: org }, 'Remove `stripeCustomerId` for org')
     deleteStripeCustomerIds.push(org.stripeCustomerId)
     if (isDryRun) return org
-    return bigPoppa.updateOrganization(org.id, {
-      stripeCustomerId: null
-    })
+    return Stripe.stripeClient.customers.retrieve(org.stripeCustomerId)
+      .then(function deleteSubscription (stripeCustomer) {
+        let subscriptionId = stripeCustomer.subscriptions.data[0].id
+        return Stripe.stripeClient.subscriptions.del(subscriptionId)
+      })
       .return(org)
   })
-  .mapSeries(function startTrialForAllOrgs (org) {
+  .mapSeries(function deleteSubscriptionForOrtgs (org) {
     orgIds.push(org.id)
     log.info({ org: org }, 'startTrialForAllOrgs')
-    if (isDryRun) return org
-    return CreateOrganizationInStripeAndStartTrial({
-      organization: {
-        id: org.id
-      }
-    })
-      .catch(WorkerStopError, err => {
-        if (err.message.match(/already.*has.*stripeCustomerId/)) {
-          log.warn({ org: org }, 'Organization already exists in Stripe')
-          return org
-        }
-        throw err
+    return Stripe.getPlanIdForOrganizationBasedOnCurrentUsage(org.githubId)
+      .then(function setPlan (planId) {
+        log.trace({ planId: planId, orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'Pland id for org')
+        if (isDryRun) return org
+        return Stripe._createSubscription(org.stripeCustomerId, org.users, planId)
       })
       .return(org)
   })
