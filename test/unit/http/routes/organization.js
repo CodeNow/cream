@@ -299,8 +299,6 @@ describe('HTTP /organization', () => {
     let getPaymentMethodForOrganizationStub
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
-    let stripeCustomerId = org.stripeCustomerId
-    let customer
     let paymentMethodOwnerId = 829
     let paymentMethodOwnerGithubId = 1981198
     let expMonth = 12
