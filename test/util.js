@@ -2,6 +2,7 @@
 
 const Promise = require('bluebird')
 const RabbitMQ = require('ponos/lib/rabbitmq')
+const request = require('request-promise')
 
 module.exports = class TestUtil {
 
@@ -40,5 +41,48 @@ module.exports = class TestUtil {
   static disconnectToRabbitMQ (publisher, workerServer) {
     return publisher.disconnect()
       .then(() => workerServer.stop())
+  }
+
+  static getRabbitAPIRequestOpts (urlEnd, method) {
+    let url = `http://${process.env.RABBITMQ_HOSTNAME}:${process.env.RABBITMQ_ADMIN_PORT}/api${urlEnd}`
+    return {
+      method: method || 'GET',
+      uri: url,
+      headers: {
+        'User-Agent': 'Request-Promise'
+      },
+      auth: {
+        user: process.env.RABBITMQ_USERNAME,
+        pass: process.env.RABBITMQ_PASSWORD
+      },
+      json: true
+    }
+  }
+
+  static deleteAllQueues () {
+    return request(TestUtil.getRabbitAPIRequestOpts('/queues'))
+      .then(queues => {
+        queues = queues.filter(x => !!x.name)
+        return Promise.map(queues, (queue) => {
+          return request(TestUtil.getRabbitAPIRequestOpts(`/queues/%2f/${queue.name}`, 'DELETE'))
+        })
+      })
+  }
+
+  static deleteAllExchanges () {
+    return request(TestUtil.getRabbitAPIRequestOpts('/exchanges'))
+      .then(exchanges => {
+        exchanges = exchanges.filter(x => !!x.name && !x.name.match(/^amq/))
+        return Promise.map(exchanges, (exchange) => {
+          return request(TestUtil.getRabbitAPIRequestOpts(`/exchanges/%2f/${exchange.name}`, 'DELETE'))
+        })
+      })
+  }
+
+  static deleteAllExchangesAndQueues () {
+    return Promise.join(
+      TestUtil.deleteAllExchanges(),
+      TestUtil.deleteAllQueues()
+    )
   }
 }

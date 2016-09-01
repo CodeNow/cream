@@ -21,6 +21,7 @@ if (process.env.TEST_STUB_OUT_BIG_POPPA) {
 
 const testUtil = require('../../util')
 const runnableAPI = require('util/runnable-api-client')
+const rabbitmq = require('util/rabbitmq')
 const stripe = require('util/stripe')
 
 const workerServer = require('workers/server')
@@ -40,13 +41,19 @@ describe('OrganizationRouter Integration Test', () => {
   before('Login into runnable API', () => runnableAPI.login())
   after('Logout into runnable API', () => runnableAPI.logout())
 
+  // Runnable API Client
+  before('Connect to RabbitMQ', () => rabbitmq.connect())
+  after('Disconnect from RabbitMQ', () => rabbitmq.disconnect())
+
   // RabbitMQ
   before('Connect to RabbitMQ', () => {
     return testUtil.connectToRabbitMQ(workerServer, [], [])
       .then(p => { publisher = p })
   })
-  after('Disconnect from RabbitMQ', () => {
+  after('Disconnect from RabbitMQ', function () {
+    this.timeout(5000)
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   describe('#postPaymentMethod', () => {
