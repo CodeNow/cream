@@ -14,6 +14,7 @@ const DiscountService = require('services/discount-service')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const EntityNotFoundError = require('errors/entity-not-found-error')
 const StripeError = require('errors/stripe-error')
+const ValidationError = require('errors/validation-error')
 
 describe('Stripe', function () {
   let orgMock
@@ -295,6 +296,36 @@ describe('Stripe', function () {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+
+    it('should throw a `ValidationError` if there was a `StripeCardError`', done => {
+      let thrownError = new Error('bad card')
+      thrownError.type = 'StripeCardError'
+      updateCustomerStub.rejects(thrownError)
+
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/stripecarderror/i)
+          expect(err.message).to.match(/bad.*card/i)
+          done()
+        })
+    })
+
+    it('should throw a `ValidationError` if there was a `StripeInvalidRequestError`', done => {
+      let thrownError = new Error('bad request')
+      thrownError.type = 'StripeInvalidRequestError'
+      updateCustomerStub.rejects(thrownError)
+
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(ValidationError)
+          expect(err.message).to.match(/stripeinvalidrequesterror/i)
+          expect(err.message).to.match(/bad.*request/i)
           done()
         })
     })
