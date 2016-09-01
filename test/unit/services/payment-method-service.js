@@ -221,4 +221,24 @@ describe('PaymentMethodService', () => {
         })
     })
   })
+
+  describe('#parseOwnerMetadata', () => {
+    it('should return an integer of the id if it exists', () => {
+      let result = PaymentMethodService.parseOwnerMetadata({ metadata: {
+        paymentMethodOwnerId: '1',
+        paymentMethodOwnerGithubId: '2'
+      }})
+      expect(result.id).to.equal(1)
+      expect(result.githubId).to.equal(2)
+    })
+
+    it('should return `null` if the ids do not exist', () => {
+      let result = PaymentMethodService.parseOwnerMetadata({ metadata: {
+        paymentMethodOwnerId: null,
+        paymentMethodOwnerGithubId: null
+      }})
+      expect(result.id).to.equal(null)
+      expect(result.githubId).to.equal(null)
+    })
+  })
 })
