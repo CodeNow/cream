@@ -122,7 +122,26 @@ describe('PaymentMethodService', () => {
         })
     })
 
+    it('should not publish an event for a payment method being removed if there is no payment method', () => {
+      getPaymentMethodForOrganizationStub.resolves(null)
+
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+        .then(() => {
+          sinon.assert.calledWithExactly(updatePaymentMethodForOrganizationStub, org, stripeToken, newPaymentMethodOwner)
+          sinon.assert.calledWithExactly(updateOrganizationStub, orgId, { hasPaymentMethod: true })
+          sinon.assert.calledWithExactly(
+            publishEventStub,
+            'organization.payment-method.added',
+            { organization: { name: orgName }, user: { githubId: user1GithubId } }
+          )
+        })
+    })
+
     it('should return undefined', () => {
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+        .then(res => {
+          expect(res).to.equal(undefined)
+        })
     })
   })
 
