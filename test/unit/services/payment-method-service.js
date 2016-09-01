@@ -91,7 +91,7 @@ describe('PaymentMethodService', () => {
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, user: { githubId: user1GithubId } }
+            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
           )
         })
     })
@@ -105,12 +105,12 @@ describe('PaymentMethodService', () => {
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.removed',
-            { organization: { name: orgName }, user: { githubId: user1GithubId } }
+            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
           )
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, user: { githubId: user2GithubId } }
+            { organization: { name: orgName }, paymentMethodOwner: { githubId: user2GithubId } }
           )
         })
     })
@@ -132,7 +132,7 @@ describe('PaymentMethodService', () => {
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, user: { githubId: user1GithubId } }
+            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
           )
         })
     })
