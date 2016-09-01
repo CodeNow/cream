@@ -13,9 +13,9 @@ const InvoiceFixture = require('../../../fixtures/stripe/invoice')
 
 const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
+const PaymentMethodService = require('services/payment-method-service')
 
 const OrganizationRouter = require('http/routes/organization')
-const ValidationError = require('errors/validation-error')
 const UserNotPartOfOrganizationError = require('errors/user-not-part-of-organization-error')
 
 describe('HTTP /organization', () => {
@@ -296,45 +296,39 @@ describe('HTTP /organization', () => {
   describe('#getPaymentMethod', () => {
     let requestStub
     let getOrganizationStub
-    let getCustomerStub
+    let getPaymentMethodForOrganizationStub
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
-    let stripeCustomerId = org.stripeCustomerId
-    let customer
     let paymentMethodOwnerId = 829
     let paymentMethodOwnerGithubId = 1981198
     let expMonth = 12
     let expYear = 2020
     let last4 = 7896
+    let paymentMethod
 
     beforeEach(() => {
       requestStub = { params: { id: orgId } }
-      customer = {
-        metadata: {
-          paymentMethodOwnerId: paymentMethodOwnerId,
-          paymentMethodOwnerGithubId: paymentMethodOwnerGithubId
+      paymentMethod = {
+        owner: {
+          id: paymentMethodOwnerId,
+          githubId: paymentMethodOwnerGithubId
         },
-        sources: {
-          data: [ // No reason to have
-            {
-              object: 'card',
-              exp_month: expMonth,
-              exp_year: expYear,
-              last4: last4,
-              brand: 'Visa'
-            }
-          ]
+        card: {
+          expMonth: expMonth,
+          expYear: expYear,
+          last4: last4,
+          brand: 'Visa'
         }
       }
     })
 
     beforeEach('Stub out', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
-      getCustomerStub = sinon.stub(stripe, 'getCustomer').resolves(customer)
+      getPaymentMethodForOrganizationStub = sinon.stub(PaymentMethodService, 'getPaymentMethodForOrganization').resolves(paymentMethod)
     })
     afterEach(() => {
       getOrganizationStub.restore()
-      getCustomerStub.restore()
+      getPaymentMethodForOrganizationStub.restore()
     })
 
     it('should call `getOrganization`', () => {
@@ -345,47 +339,22 @@ describe('HTTP /organization', () => {
         })
     })
 
-    it('should call `getCustomer`', () => {
+    it('should call `getPaymentMethodForOrganizationStub`', () => {
       return OrganizationRouter.getPaymentMethod(requestStub, responseStub)
         .then(() => {
-          sinon.assert.calledOnce(getCustomerStub)
-          sinon.assert.calledWithExactly(getCustomerStub, stripeCustomerId)
+          sinon.assert.calledOnce(getPaymentMethodForOrganizationStub)
+          sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, org)
         })
     })
 
     it('should handle an organization not having any payment methods', () => {
-      customer.sources = null
-      getCustomerStub.resolves(customer)
+      getPaymentMethodForOrganizationStub.resolves(null)
 
       return OrganizationRouter.getPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.called(responseStub.status)
           sinon.assert.calledWithExactly(responseStub.status, 404)
           sinon.assert.notCalled(responseStub.json)
-        })
-    })
-
-    it('should handle an organization not having card', () => {
-      customer.sources.data[0].object = 'something-else-thats-not-a-card'
-      getCustomerStub.resolves(customer)
-
-      return OrganizationRouter.getPaymentMethod(requestStub, responseStub)
-        .then(() => {
-          sinon.assert.called(responseStub.status)
-          sinon.assert.calledWithExactly(responseStub.status, 404)
-          sinon.assert.notCalled(responseStub.json)
-        })
-    })
-
-    it('should have the necessary payment method properties', () => {
-      return OrganizationRouter.getPaymentMethod(requestStub, responseStub)
-        .then(() => {
-          let res = responseStub.json.firstCall.args[0]
-          let card = res.card
-          expect(card).to.have.property('expMonth', expMonth)
-          expect(card).to.have.property('expYear', expYear)
-          expect(card).to.have.property('last4', last4)
-          expect(card).to.have.property('brand', 'Visa')
         })
     })
 
@@ -423,7 +392,6 @@ describe('HTTP /organization', () => {
     let requestStub
     let getOrganizationStub
     let updatePaymentMethodForOrganizationStub
-    let updateOrganizationStub
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let user = org.users[0]
@@ -442,12 +410,10 @@ describe('HTTP /organization', () => {
 
     beforeEach('Stub out', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
-      updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves(org)
-      updatePaymentMethodForOrganizationStub = sinon.stub(stripe, 'updatePaymentMethodForOrganization').resolves()
+      updatePaymentMethodForOrganizationStub = sinon.stub(PaymentMethodService, 'updatePaymentMethodForOrganization').resolves()
     })
     afterEach('Restore stub', () => {
       getOrganizationStub.restore()
-      updateOrganizationStub.restore()
       updatePaymentMethodForOrganizationStub.restore()
     })
 
@@ -462,19 +428,7 @@ describe('HTTP /organization', () => {
         })
     })
 
-    it('should update the `hasPaymentMethod` property to `true`', () => {
-      return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
-        .then(() => {
-          sinon.assert.calledOnce(updateOrganizationStub)
-          sinon.assert.calledWithExactly(
-            updateOrganizationStub,
-            orgId,
-            { hasPaymentMethod: true }
-          )
-        })
-    })
-
-    it('should update the organization', () => {
+    it('should update the payment method', () => {
       return OrganizationRouter.postPaymentMethod(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(updatePaymentMethodForOrganizationStub)
@@ -503,36 +457,6 @@ describe('HTTP /organization', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(UserNotPartOfOrganizationError)
-          done()
-        })
-    })
-
-    it('should throw a `ValidationError` if there was a `StripeCardError`', done => {
-      let thrownError = new Error('bad card')
-      thrownError.type = 'StripeCardError'
-      updatePaymentMethodForOrganizationStub.rejects(thrownError)
-
-      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.be.an.instanceof(ValidationError)
-          expect(err.message).to.match(/stripecarderror/i)
-          expect(err.message).to.match(/bad.*card/i)
-          done()
-        })
-    })
-
-    it('should throw a `ValidationError` if there was a `StripeInvalidRequestError`', done => {
-      let thrownError = new Error('bad request')
-      thrownError.type = 'StripeInvalidRequestError'
-      updatePaymentMethodForOrganizationStub.rejects(thrownError)
-
-      OrganizationRouter.postPaymentMethod(requestStub, responseStub)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.be.an.instanceof(ValidationError)
-          expect(err.message).to.match(/stripeinvalidrequesterror/i)
-          expect(err.message).to.match(/bad.*request/i)
           done()
         })
     })
