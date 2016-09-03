@@ -128,7 +128,7 @@ describe('Stripe', function () {
       let subscription = {
         id: subscriptionId
       }
-      getSubscriptionForOrganizationStub = sinon.stub(Stripe, '_getSubscriptionForOrganization').resolves(subscription)
+      getSubscriptionForOrganizationStub = sinon.stub(Stripe, 'getSubscriptionForOrganization').resolves(subscription)
       updateUsersForPlanStub = sinon.stub(Stripe, '_updateUsersForPlan').resolves(subscription)
     })
 
@@ -183,7 +183,7 @@ describe('Stripe', function () {
       let subscription = {
         id: subscriptionId
       }
-      _getSubscriptionForOrganizationStub = sinon.stub(Stripe, '_getSubscriptionForOrganization').resolves(subscription)
+      _getSubscriptionForOrganizationStub = sinon.stub(Stripe, 'getSubscriptionForOrganization').resolves(subscription)
       getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(Stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
       updateSubsriptionStub = sinon.stub(stripeClient.subscriptions, 'update').resolves()
     })
@@ -557,7 +557,7 @@ describe('Stripe', function () {
     })
   })
 
-  describe('_getSubscriptionForOrganization', () => {
+  describe('getSubscriptionForOrganization', () => {
     let getSubscriptionList
     let orgStripeCustomerId = 'cust_234234'
     let firstSubscription = {}
@@ -576,7 +576,7 @@ describe('Stripe', function () {
     })
 
     it('should fetch a list of subscription from Stripe', () => {
-      return Stripe._getSubscriptionForOrganization(orgStripeCustomerId)
+      return Stripe.getSubscriptionForOrganization(orgStripeCustomerId)
         .then(res => {
           sinon.assert.calledOnce(getSubscriptionList)
           sinon.assert.calledWithExactly(
@@ -591,7 +591,7 @@ describe('Stripe', function () {
     })
 
     it('should return the first subsription from the query', () => {
-      return Stripe._getSubscriptionForOrganization(orgStripeCustomerId)
+      return Stripe.getSubscriptionForOrganization(orgStripeCustomerId)
         .then(res => {
           expect(res).to.equal(firstSubscription)
         })
@@ -600,7 +600,7 @@ describe('Stripe', function () {
     it('should throw an EntityNotFoundError if the subscription is not found', done => {
       getSubscriptionList.resolves({ data: [] })
 
-      Stripe._getSubscriptionForOrganization(orgStripeCustomerId)
+      Stripe.getSubscriptionForOrganization(orgStripeCustomerId)
         .asCallback(err => {
           expect(err).to.be.an.instanceof(EntityNotFoundError)
           done()
@@ -611,7 +611,7 @@ describe('Stripe', function () {
       let thrownErr = new Error('hello')
       getSubscriptionList.rejects(thrownErr)
 
-      Stripe._getSubscriptionForOrganization(orgStripeCustomerId)
+      Stripe.getSubscriptionForOrganization(orgStripeCustomerId)
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()
