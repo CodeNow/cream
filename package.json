@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/CodeNow/CREAM#readme",
   "dependencies": {
-    "101": "^1.6.1",
+    "101": "^1.6.2",
     "@runnable/api-client": "^7.5.0",
     "@runnable/big-poppa-client": "^0.4.0",
     "bluebird": "^3.4.1",
