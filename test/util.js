@@ -3,6 +3,7 @@
 const Promise = require('bluebird')
 const RabbitMQ = require('ponos/lib/rabbitmq')
 const request = require('request-promise')
+const stripe = require('util/stripe')
 
 module.exports = class TestUtil {
 
@@ -84,5 +85,24 @@ module.exports = class TestUtil {
       TestUtil.deleteAllExchanges(),
       TestUtil.deleteAllQueues()
     )
+  }
+
+  static createCustomerAndSubscription (org) {
+    return stripe.stripeClient.customers.create({
+      description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`
+    })
+    .then(stripeCustomer => {
+      org.stripeCustomerId = stripeCustomer.id
+      return stripe.stripeClient.subscriptions.create({
+        customer: org.stripeCustomerId,
+        plan: 'runnable-starter'
+      })
+      .then(stripeSubscription => {
+        return Promise.props({
+          customer: stripeCustomer,
+          subscription: stripeSubscription
+        })
+      })
+    })
   }
 }
