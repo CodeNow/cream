@@ -6,13 +6,10 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
 
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
-
 const stripe = require('util/stripe')
 const TrialService = require('services/trial-service')
 const rabbitmq = require('util/rabbitmq')
 
-const CheckForOrganizationsWithEndingTrials = require('workers/organization.trial.ending.check').task
 const CheckForOrganizationsWithEndingTrialsSchema = require('workers/organization.trial.ending.check').jobSchema
 
 describe('#organization.trial.ending.check', () => {
