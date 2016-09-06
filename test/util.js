@@ -105,4 +105,8 @@ module.exports = class TestUtil {
       })
     })
   }
+
+  static throwIfSuccess () {
+    throw new Error('Should not be called')
+  }
 }

@@ -1150,4 +1150,53 @@ describe('Stripe', function () {
         })
     })
   })
+
+  describe('#updateSubsriptionWithTrialEndingNotification', () => {
+    let updateSubscriptionStub
+    const subscription = {}
+    const subscriptionId = 'sub_234243423k'
+    const notificationSentTime = moment().toISOString()
+
+    beforeEach('Stub out method', () => {
+      updateSubscriptionStub = sinon.stub(stripeClient.subscriptions, 'update').resolves(subscription)
+    })
+
+    afterEach('Restore stub', () => {
+      updateSubscriptionStub.restore()
+    })
+
+    it('should call `update`', () => {
+      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+        .then(subscription => {
+          sinon.assert.calledOnce(updateSubscriptionStub)
+          sinon.assert.calledWithExactly(
+            updateSubscriptionStub,
+            subscriptionId,
+            {
+              metadata: {
+                notifiedTrialEnding: notificationSentTime
+              }
+            }
+          )
+        })
+    })
+
+    it('should return the updated subscription', () => {
+      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+        .then(subscription => {
+          expect(subscription).to.equal(subscription)
+        })
+    })
+
+    it('should throw any errors throws by the client', () => {
+      let thrownErr = new Error()
+      updateSubscriptionStub.rejects(thrownErr)
+
+      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
 })
