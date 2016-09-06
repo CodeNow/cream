@@ -11,13 +11,13 @@ const stripe = require('util/stripe')
 const TrialService = require('services/trial-service')
 const rabbitmq = require('util/rabbitmq')
 
-const CheckForOrganizationsWithExpiredTrials = require('workers/organizations.plan.trial-expired.check')
+const CheckForOrganizationsWithEndingTrials = require('workers/organization.trial.ending.check')
 
-describe('#organizations.plan.trial-expired.check', () => {
+describe('#organization.trial.ending.check', () => {
   let validJob
   let getAllOrgsInTrialByTrialEndTimeStub
   let publishEventStub
-  let updateSubsriptionWithTrialExipredNotificationStub
+  let updateSubsriptionWithTrialEndingNotificationStub
 
   beforeEach('Set valid job', () => {
     validJob = {}
@@ -26,21 +26,21 @@ describe('#organizations.plan.trial-expired.check', () => {
   beforeEach('Stub out methods', () => {
     getAllOrgsInTrialByTrialEndTimeStub = sinon.stub(TrialService, 'getAllOrgsInTrialByTrialEndTime').resolves([])
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
-    updateSubsriptionWithTrialExipredNotificationStub = sinon.stub(stripe, 'updateSubsriptionWithTrialExipredNotification').resolves()
+    updateSubsriptionWithTrialEndingNotificationStub = sinon.stub(stripe, 'updateSubsriptionWithTrialEndingNotification').resolves()
   })
   afterEach('Retore methods', () => {
     getAllOrgsInTrialByTrialEndTimeStub.restore()
     publishEventStub.restore()
-    updateSubsriptionWithTrialExipredNotificationStub.restore()
+    updateSubsriptionWithTrialEndingNotificationStub.restore()
   })
 
   describe('Validation', () => {
     it('should validate if a valid job is passed', () => {
-      return CheckForOrganizationsWithExpiredTrials(validJob)
+      return CheckForOrganizationsWithEndingTrials(validJob)
     })
 
     it('should not validate if `tid` is not a uuid', done => {
-      CheckForOrganizationsWithExpiredTrials({ tid: 'world' })
+      CheckForOrganizationsWithEndingTrials({ tid: 'world' })
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
