@@ -1,6 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
+const Joi = Promise.promisifyAll(require('joi'))
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
@@ -11,11 +12,12 @@ const stripe = require('util/stripe')
 const TrialService = require('services/trial-service')
 const rabbitmq = require('util/rabbitmq')
 
-const CheckForOrganizationsWithEndingTrials = require('workers/organization.trial.ending.check')
+const CheckForOrganizationsWithEndingTrials = require('workers/organization.trial.ending.check').task
+const CheckForOrganizationsWithEndingTrialsSchema = require('workers/organization.trial.ending.check').jobSchema
 
 describe('#organization.trial.ending.check', () => {
   let validJob
-  let getAllOrgsInTrialByTrialEndTimeStub
+  let getFilteredOrgsInTrialByTrialEndTimeStub
   let publishEventStub
   let updateSubsriptionWithTrialEndingNotificationStub
 
@@ -24,27 +26,26 @@ describe('#organization.trial.ending.check', () => {
   })
 
   beforeEach('Stub out methods', () => {
-    getAllOrgsInTrialByTrialEndTimeStub = sinon.stub(TrialService, 'getAllOrgsInTrialByTrialEndTime').resolves([])
+    getFilteredOrgsInTrialByTrialEndTimeStub = sinon.stub(TrialService, 'getFilteredOrgsInTrialByTrialEndTime').resolves([])
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
     updateSubsriptionWithTrialEndingNotificationStub = sinon.stub(stripe, 'updateSubsriptionWithTrialEndingNotification').resolves()
   })
   afterEach('Retore methods', () => {
-    getAllOrgsInTrialByTrialEndTimeStub.restore()
+    getFilteredOrgsInTrialByTrialEndTimeStub.restore()
     publishEventStub.restore()
     updateSubsriptionWithTrialEndingNotificationStub.restore()
   })
 
   describe('Validation', () => {
     it('should validate if a valid job is passed', () => {
-      return CheckForOrganizationsWithEndingTrials(validJob)
+      return Joi.validateAsync(validJob, CheckForOrganizationsWithEndingTrialsSchema)
     })
 
     it('should not validate if `tid` is not a uuid', done => {
-      CheckForOrganizationsWithEndingTrials({ tid: 'world' })
+      return Joi.validateAsync({ tid: 'world' }, CheckForOrganizationsWithEndingTrialsSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
+          expect(err.message).to.match(/tid.*guid/i)
           done()
         })
     })
