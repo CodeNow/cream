@@ -590,7 +590,7 @@ describe('Stripe', function () {
         })
     })
 
-    it('should return the first subsription from the query', () => {
+    it('should return the first subscription from the query', () => {
       return Stripe.getSubscriptionForOrganization(orgStripeCustomerId)
         .then(res => {
           expect(res).to.equal(firstSubscription)
@@ -1102,7 +1102,7 @@ describe('Stripe', function () {
     })
   })
 
-  describe('#updateSubsriptionWithTrialEndedNotification', () => {
+  describe('#updateSubscriptionWithTrialEndedNotification', () => {
     let updateSubscriptionStub
     const subscription = {}
     const subscriptionId = 'sub_234243423k'
@@ -1117,7 +1117,7 @@ describe('Stripe', function () {
     })
 
     it('should call `update`', () => {
-      Stripe.updateSubsriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
         .then(subscription => {
           sinon.assert.calledOnce(updateSubscriptionStub)
           sinon.assert.calledWithExactly(
@@ -1133,7 +1133,7 @@ describe('Stripe', function () {
     })
 
     it('should return the updated subscription', () => {
-      Stripe.updateSubsriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
         .then(subscription => {
           expect(subscription).to.equal(subscription)
         })
@@ -1143,7 +1143,7 @@ describe('Stripe', function () {
       let thrownErr = new Error()
       updateSubscriptionStub.rejects(thrownErr)
 
-      Stripe.updateSubsriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndedNotification(subscriptionId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
@@ -1151,7 +1151,7 @@ describe('Stripe', function () {
     })
   })
 
-  describe('#updateSubsriptionWithTrialEndingNotification', () => {
+  describe('#updateSubscriptionWithTrialEndingNotification', () => {
     let updateSubscriptionStub
     const subscription = {}
     const subscriptionId = 'sub_234243423k'
@@ -1166,7 +1166,7 @@ describe('Stripe', function () {
     })
 
     it('should call `update`', () => {
-      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
         .then(subscription => {
           sinon.assert.calledOnce(updateSubscriptionStub)
           sinon.assert.calledWithExactly(
@@ -1182,7 +1182,7 @@ describe('Stripe', function () {
     })
 
     it('should return the updated subscription', () => {
-      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
         .then(subscription => {
           expect(subscription).to.equal(subscription)
         })
@@ -1192,7 +1192,7 @@ describe('Stripe', function () {
       let thrownErr = new Error()
       updateSubscriptionStub.rejects(thrownErr)
 
-      Stripe.updateSubsriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
+      Stripe.updateSubscriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
