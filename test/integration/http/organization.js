@@ -41,7 +41,7 @@ describe('OrganizationRouter Integration Test', () => {
   before('Login into runnable API', () => runnableAPI.login())
   after('Logout into runnable API', () => runnableAPI.logout())
 
-  // Runnable API Client
+  // RabbitMQ Client
   before('Connect to RabbitMQ', () => rabbitmq.connect())
   after('Disconnect from RabbitMQ', () => rabbitmq.disconnect())
 

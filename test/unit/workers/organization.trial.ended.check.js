@@ -4,9 +4,9 @@ const expect = require('chai').expect
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CheckForOrganizationsWithAlmostExpiredTrials = require('workers/organizations.plan.trial-almost-expired.check')
+const CheckForOrganizationsWithEndedTrials = require('workers/organization.trial.ended.check')
 
-describe('#organizations.plan.trial-almost-expired.check', () => {
+describe('#organization.trial.ended.check', () => {
   let validJob
 
   beforeEach(() => {
@@ -15,11 +15,11 @@ describe('#organizations.plan.trial-almost-expired.check', () => {
 
   describe('Validation', () => {
     it('should validate if a valid job is passed', () => {
-      return CheckForOrganizationsWithAlmostExpiredTrials(validJob)
+      return CheckForOrganizationsWithEndedTrials(validJob)
     })
 
     it('should not validate if `tid` is not a uuid', done => {
-      CheckForOrganizationsWithAlmostExpiredTrials({ tid: 'world' })
+      CheckForOrganizationsWithEndedTrials({ tid: 'world' })
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
