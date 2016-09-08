@@ -1,7 +1,6 @@
 'use strict'
 
 const Promise = require('bluebird')
-const Joi = Promise.promisifyAll(require('joi'))
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
@@ -14,7 +13,6 @@ const TrialService = require('services/trial-service')
 const rabbitmq = require('util/rabbitmq')
 
 const CheckForOrganizationsWithEndedTrials = require('workers/organization.trial.ended.check').task
-const CheckForOrganizationsWithEndedTrialsSchema = require('workers/organization.trial.ended.check').jobSchema
 
 describe('#organization.trial.ended.check', () => {
   let validJob
@@ -60,21 +58,6 @@ describe('#organization.trial.ended.check', () => {
     publishEventStub.restore()
     updateSubscriptionWithTrialEndedNotificationStub.restore()
     filterSpy.restore()
-  })
-
-  describe('Validation', () => {
-    it('should validate if a valid job is passed', () => {
-      return Joi.validateAsync(validJob, CheckForOrganizationsWithEndedTrialsSchema)
-    })
-
-    it('should not validate if `tid` is not a uuid', done => {
-      return Joi.validateAsync({ tid: 'world' }, CheckForOrganizationsWithEndedTrialsSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.message).to.match(/tid.*guid/i)
-          done()
-        })
-    })
   })
 
   describe('Errors', () => {
