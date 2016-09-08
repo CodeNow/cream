@@ -26,15 +26,16 @@ const httpServer = require('http/server')
 
 describe('#organization.trial.ended.check Integration Test', () => {
   const trialEnd = moment().add(7, 'days')
-  const org1 = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { id: 91, githubId: 9487339, trialEnd })
   const org2 = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { id: 92, githubId: 10224621, trialEnd })
   const org3 = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { id: 93, githubId: 2828361, trialEnd })
   const org3Id = org3.id
   let org3SubscriptionId
   let publisher
+  let nowISOString
 
   let updateSubscriptionWithTrialEndedNotificationStub
   let publishEventStub
+  let momentStub
 
   // HTTP
   before('Start HTTP server', () => httpServer.start())
@@ -72,11 +73,10 @@ describe('#organization.trial.ended.check Integration Test', () => {
   before('Create customer and subscription', function () {
     this.timeout(10000)
     return Promise.all([
-      testUtil.createCustomerAndSubscription(org1),
       testUtil.createCustomerAndSubscription(org2),
       testUtil.createCustomerAndSubscription(org3)
     ])
-      .spread((res1, res2, res3) => {
+      .spread((res2, res3) => {
         // Save the subscription id for org3
         org3SubscriptionId = res3.subscription.id
         // Update org 2 subscription to have correct metadata
@@ -91,24 +91,39 @@ describe('#organization.trial.ended.check Integration Test', () => {
     this.timeout(5000)
     // Deleting the customer deletes the subscription
     return Promise.all([
-      stripe.stripeClient.customers.del(org1.stripeCustomerId),
       stripe.stripeClient.customers.del(org2.stripeCustomerId),
       stripe.stripeClient.customers.del(org3.stripeCustomerId)
     ])
   })
 
+  /**
+   * Stub out `moment().toISOString()` in order to be able to match queries
+   * to BP in `mephi`. This is a limitation in Mephi for not allowing fuzzy
+   * matches and/or regular expressions.
+   */
+  before('Stub out moment', () => {
+    let now = moment()
+    nowISOString = now.toISOString()
+    momentStub = sinon.stub(now.constructor.prototype, 'toISOString').returns(nowISOString)
+  })
+  after('Restore moment', () => {
+    momentStub.restore()
+  })
+
   // Big Poppa Mock
   before('Stub out big-poppa calls', done => {
     // Set hasPaymentMethod to true and false
-    org1.hasPaymentMethod = false
     org2.hasPaymentMethod = false
     org3.hasPaymentMethod = false
     // Change trielEndDate on org 3 and 4 to be ended organization
     org2.trialEnd = moment().subtract(1, 'days')
     org3.trialEnd = moment().subtract(1, 'hours')
-    bigPoppaAPI.stub('GET', '/organization/?hasPaymentMethod=false').returns({
+    let stripeCustomerIdQuery = encodeURIComponent(JSON.stringify({ isNull: false }))
+    let trialEndQuery = encodeURIComponent(JSON.stringify({ lessThan: nowISOString }))
+    let path = `/organization/?hasPaymentMethod=false&stripeCustomerId=${stripeCustomerIdQuery}&trialEnd=${trialEndQuery}`
+    bigPoppaAPI.stub('GET', path).returns({
       status: 200,
-      body: JSON.stringify([org1, org2, org3])
+      body: JSON.stringify([org2, org3])
     })
     bigPoppaAPI.start(done)
   })
