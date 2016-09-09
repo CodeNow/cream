@@ -17,7 +17,6 @@ describe('TrialService', () => {
   describe('getFilteredOrgsInTrialByTrialEndTime', () => {
     let getOrganizationsStub
     let getSubscriptionForOrganizationStub
-    let filterSpy
     const endTime = moment().toISOString()
     let org1 = {
       trialEnd: moment().subtract(7, 'days'),
@@ -27,20 +26,14 @@ describe('TrialService', () => {
       trialEnd: moment().subtract(1, 'days'),
       stripeCustomerId: 'cus_234234'
     }
-    let org3 = {
-      trialEnd: moment().subtract(1, 'days'),
-      stripeCustomerId: false
-    }
 
     beforeEach('Stub out methods', () => {
-      getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves([ org1, org2, org3 ])
+      getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves([ org1, org2 ])
       getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves({})
-      filterSpy = sinon.spy(Promise, 'filter')
     })
     afterEach('Restore stubs', () => {
       getOrganizationsStub.restore()
       getSubscriptionForOrganizationStub.restore()
-      filterSpy.restore()
     })
 
     it('should get the organizations', () => {
@@ -50,30 +43,11 @@ describe('TrialService', () => {
         sinon.assert.calledWithExactly(
           getOrganizationsStub,
           {
-            hasPaymentMethod: false
+            hasPaymentMethod: false,
+            stripeCustomerId: { isNull: false },
+            trialEnd: { lessThan: endTime }
           }
         )
-      })
-    })
-
-    it('should filter out organizations with no `stripeCustomerId`', () => {
-      return TrialService.getFilteredOrgsInTrialByTrialEndTime(endTime)
-      .then(() => {
-        sinon.assert.calledOnce(getOrganizationsStub)
-        sinon.assert.calledWithExactly(
-          getOrganizationsStub,
-          {
-            hasPaymentMethod: false
-          }
-        )
-      })
-    })
-
-    it('should filter out organizations with an `endTime` after the provided time', () => {
-      return TrialService.getFilteredOrgsInTrialByTrialEndTime(endTime)
-      .then(() => {
-        sinon.assert.calledOnce(filterSpy)
-        sinon.assert.calledWithExactly(filterSpy, [org1, org2], sinon.match.func)
       })
     })
 
