@@ -37,7 +37,24 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
-          period_end: activePeriodEnd.format('X')
+          lines: {
+            data: [
+              {
+                period: {
+                  start: 123,
+                  end: 23423
+                },
+                type: 'invoiceitem'
+              },
+              {
+                period: {
+                  start: 123,
+                  end: activePeriodEnd.format('X')
+                },
+                type: 'subscription'
+              }
+            ]
+          }
         }
       }
     }
@@ -101,6 +118,31 @@ describe('#stripe.invoice.payment-succeeded', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+
+    it('should throw a `WorkerStopError` if there are no subscriptions', done => {
+      let lineItem = stripeEvent.data.object.lines.data[0]
+      let newLineItem = Object.assign({}, lineItem)
+      stripeEvent.data.object.lines.data = [newLineItem, lineItem]
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/subscription.*line.*item/i)
+          done()
+        })
+    })
+
+    it('should not validate if there are no line items', done => {
+      stripeEvent.data.object.lines.data = []
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/1*required.*value/i)
           done()
         })
     })
