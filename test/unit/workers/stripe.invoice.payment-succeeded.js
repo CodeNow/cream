@@ -42,8 +42,16 @@ describe('#stripe.invoice.payment-succeeded', () => {
               {
                 period: {
                   start: 123,
+                  end: 23423
+                },
+                type: 'invoiceitem'
+              },
+              {
+                period: {
+                  start: 123,
                   end: activePeriodEnd.format('X')
-                }
+                },
+                type: 'subscription'
               }
             ]
           }
@@ -114,8 +122,22 @@ describe('#stripe.invoice.payment-succeeded', () => {
         })
     })
 
+    it('should throw a `WorkerStopError` if there are no subscriptions', done => {
+      let lineItem = stripeEvent.data.object.lines.data[0]
+      let newLineItem = Object.assign({}, lineItem)
+      stripeEvent.data.object.lines.data = [newLineItem, lineItem]
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/subscription.*line.*item/i)
+          done()
+        })
+    })
+
     it('should not validate if there are no line items', done => {
-      stripeEvent.data.object.lines.data.pop()
+      stripeEvent.data.object.lines.data = []
       ProcessPaymentSucceeded(validJob)
         .asCallback(err => {
           expect(err).to.exist
@@ -155,24 +177,6 @@ describe('#stripe.invoice.payment-succeeded', () => {
             updateOrganizationStub,
             orgId,
             { activePeriodEnd: activePeriodEnd.toISOString() }
-          )
-        })
-    })
-
-    it('should be able to handle mutliple line items', () => {
-      let lineItem = stripeEvent.data.object.lines.data[0]
-      let newActivePeriodEnd = activePeriodEnd.clone().add(1, 'minutes')
-      let newLineItem = Object.assign({}, lineItem)
-      newLineItem.period.end = newActivePeriodEnd.format('X')
-      stripeEvent.data.object.lines.data = [newLineItem, lineItem]
-
-      return ProcessPaymentSucceeded(validJob)
-        .then(() => {
-          sinon.assert.calledOnce(updateOrganizationStub)
-          sinon.assert.calledWithExactly(
-            updateOrganizationStub,
-            orgId,
-            { activePeriodEnd: newActivePeriodEnd.toISOString() }
           )
         })
     })
