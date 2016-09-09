@@ -16,7 +16,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
 const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-succeeded').jobSchema
 
-describe.only('#stripe.invoice.payment-succeeded', () => {
+describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
