@@ -23,7 +23,8 @@ describe('#organization.plan.start-trial', () => {
   let createCustomerStub
   let org
   let stripeCustomerId = 'cus_23423432'
-  let trialEnd = 1471135084
+  let trialEnd = moment(1471135084, 'X')
+  let trialEndWithPadding = trialEnd.clone().add(6, 'hours')
 
   beforeEach(() => {
     validJob = { organization: { id: organizationId } }
@@ -38,7 +39,7 @@ describe('#organization.plan.start-trial', () => {
         id: stripeCustomerId
       },
       subscription: {
-        trial_end: trialEnd
+        trial_end: trialEnd.format('X')
       }
     })
   })
@@ -160,7 +161,7 @@ describe('#organization.plan.start-trial', () => {
             organizationId,
             {
               stripeCustomerId: stripeCustomerId,
-              trialEnd: moment(trialEnd, 'X').toISOString()
+              trialEnd: trialEndWithPadding.toISOString()
             }
           )
         })
