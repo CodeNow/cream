@@ -23,7 +23,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe('#stripe.invoice.payment-succeeded Integration Test', () => {
+describe.only('#stripe.invoice.payment-succeeded Integration Test', () => {
   let publisher
   let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
   let orgId = org.id
@@ -141,7 +141,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
     })
     return testUtil.poll(checkPathOrganizationStub, 100, 5000)
       .then(function checkIfOrgWasCorrectlyPatched () {
-        let periodEndTimestamp = stripeEvent.data.object.period_end
+        let periodEndTimestamp = stripeEvent.data.object.lines.data[0].period.end
         let periodEnd = moment(periodEndTimestamp, 'X')
         sinon.assert.calledOnce(updateOrganizationSpy)
         sinon.assert.calledWithExactly(

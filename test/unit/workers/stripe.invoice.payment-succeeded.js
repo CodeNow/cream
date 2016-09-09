@@ -16,7 +16,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
 const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-succeeded').jobSchema
 
-describe('#stripe.invoice.payment-succeeded', () => {
+describe.only('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
@@ -37,7 +37,16 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
-          period_end: activePeriodEnd.format('X')
+          lines: {
+            data: [
+              {
+                period: {
+                  start: 123,
+                  end: activePeriodEnd.format('X')
+                }
+              }
+            ]
+          }
         }
       }
     }
@@ -104,6 +113,17 @@ describe('#stripe.invoice.payment-succeeded', () => {
           done()
         })
     })
+
+    it('should not validate if there are no line items', done => {
+      stripeEvent.data.object.lines.data.pop()
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/1*required.*value/i)
+          done()
+        })
+    })
   })
 
   describe('Main Functionality', () => {
@@ -135,6 +155,24 @@ describe('#stripe.invoice.payment-succeeded', () => {
             updateOrganizationStub,
             orgId,
             { activePeriodEnd: activePeriodEnd.toISOString() }
+          )
+        })
+    })
+
+    it('should be able to handle mutliple line items', () => {
+      let lineItem = stripeEvent.data.object.lines.data[0]
+      let newActivePeriodEnd = activePeriodEnd.clone().add(1, 'minutes')
+      let newLineItem = Object.assign({}, lineItem)
+      newLineItem.period.end = newActivePeriodEnd.format('X')
+      stripeEvent.data.object.lines.data = [newLineItem, lineItem]
+
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(updateOrganizationStub)
+          sinon.assert.calledWithExactly(
+            updateOrganizationStub,
+            orgId,
+            { activePeriodEnd: newActivePeriodEnd.toISOString() }
           )
         })
     })
