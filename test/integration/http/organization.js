@@ -65,6 +65,7 @@ describe('OrganizationRouter Integration Test', () => {
     let stripeCardId
     let userId = org.users[0].id
     let userGithubId = org.users[0].githubId
+    let userEmail = 'jorge@runnable.com'
 
     before('Create customer', function () {
       this.timeout(4000)
@@ -114,7 +115,7 @@ describe('OrganizationRouter Integration Test', () => {
       return request
         .post(`http://localhost:${process.env.PORT}/organization/${orgId}/payment-method`)
         .type('json')
-        .send({ stripeToken: stripeTokenId, user: { id: userId } })
+        .send({ stripeToken: stripeTokenId, user: { id: userId, email: userEmail } })
         .then(() => {
           return stripe.stripeClient.customers.retrieve(stripeCustomerId)
         })
@@ -122,6 +123,7 @@ describe('OrganizationRouter Integration Test', () => {
           expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerId', userId.toString())
           expect(stripeCustomer).to.have.deep.property('metadata.paymentMethodOwnerGithubId', userGithubId.toString())
           expect(stripeCustomer).to.have.property('default_source', stripeCardId)
+          expect(stripeCustomer).to.have.property('email', userEmail)
         })
     })
   })
@@ -133,6 +135,7 @@ describe('OrganizationRouter Integration Test', () => {
     let stripeTokenId
     let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
     let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
+    let userEmail = 'jorge@runnable.com'
 
     before('Create customer', () => {
       return stripe.stripeClient.customers.create({
@@ -181,7 +184,7 @@ describe('OrganizationRouter Integration Test', () => {
       return request
         .post(`http://localhost:${process.env.PORT}/organization/${orgId}/payment-method`)
         .type('json')
-        .send({ stripeToken: stripeTokenId, user: { id: userId } })
+        .send({ stripeToken: stripeTokenId, user: { id: userId, email: userEmail } })
         .then(() => {
           return request.get(`http://localhost:${process.env.PORT}/organization/${orgId}/payment-method/`)
         })
@@ -199,6 +202,7 @@ describe('OrganizationRouter Integration Test', () => {
           expect(card).to.have.property('brand', 'Visa')
           expect(owner).to.have.property('id', userId)
           expect(owner).to.have.property('githubId', userGithubId)
+          expect(owner).to.have.property('email', userEmail)
         })
     })
   })
