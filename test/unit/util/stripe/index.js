@@ -8,7 +8,7 @@ require('sinon-as-promised')(Promise)
 
 const runnableClient = require('util/runnable-api-client')
 const Stripe = require('util/stripe')
-const stripeClient = Stripe.stripeClient
+const stripeClient = require('util/stripe/client')
 
 const DiscountService = require('services/discount-service')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
@@ -328,110 +328,6 @@ describe('Stripe', function () {
           expect(err).to.be.an.instanceof(ValidationError)
           expect(err.message).to.match(/stripeinvalidrequesterror/i)
           expect(err.message).to.match(/bad.*request/i)
-          done()
-        })
-    })
-  })
-
-  describe('updateInvoiceWithPaymentMethodOwner', () => {
-    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
-    let customer
-    let retrieveCustomerStub
-    let _updateInvoiceMetadataStub
-
-    beforeEach('Stub out method', () => {
-      customer = {}
-      retrieveCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
-      _updateInvoiceMetadataStub = sinon.stub(Stripe, '_updateInvoiceMetadata').resolves()
-    })
-
-    afterEach('Restore stub', () => {
-      retrieveCustomerStub.restore()
-      _updateInvoiceMetadataStub.restore()
-    })
-
-    it('should retrieve the customer', () => {
-      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .then(() => {
-          sinon.assert.calledOnce(retrieveCustomerStub)
-          sinon.assert.calledWithExactly(
-            retrieveCustomerStub,
-            stripeCustomerId
-          )
-        })
-    })
-
-    it('should update the invoice metadata', () => {
-      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .then(() => {
-          sinon.assert.calledOnce(_updateInvoiceMetadataStub)
-          sinon.assert.calledWithExactly(
-            _updateInvoiceMetadataStub,
-            invoiceId,
-            customer
-          )
-        })
-    })
-
-    it('should throw any errors throws by the client', done => {
-      let thrownErr = new Error()
-      _updateInvoiceMetadataStub.rejects(thrownErr)
-
-      Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.equal(thrownErr)
-          done()
-        })
-    })
-  })
-
-  describe('_updateInvoiceMetadata', () => {
-    let updateInvoiceStub
-    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
-    let customer
-    let userId = 23423
-    let userGithubId = 198198
-
-    beforeEach('Stub out method', () => {
-      customer = {
-        metadata: {
-          paymentMethodOwnerId: userId,
-          paymentMethodOwnerGithubId: userGithubId
-        }
-      }
-      updateInvoiceStub = sinon.stub(stripeClient.invoices, 'update').resolves()
-    })
-
-    afterEach('Restore stub', () => {
-      updateInvoiceStub.restore()
-    })
-
-    it('should update the invoice with the corrrect metadata', () => {
-      return Stripe._updateInvoiceMetadata(invoiceId, customer)
-        .then(() => {
-          sinon.assert.calledOnce(updateInvoiceStub)
-          sinon.assert.calledWithExactly(
-            updateInvoiceStub,
-            invoiceId,
-            {
-              metadata: {
-                paymentMethodOwnerId: userId,
-                paymentMethodOwnerGithubId: userGithubId
-              }
-            }
-          )
-        })
-    })
-
-    it('should throw any errors throws by the client', done => {
-      let thrownErr = new Error()
-      updateInvoiceStub.rejects(thrownErr)
-
-      Stripe._updateInvoiceMetadata(invoiceId, customer)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.equal(thrownErr)
           done()
         })
     })
