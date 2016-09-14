@@ -234,9 +234,10 @@ describe('Stripe', function () {
     let updateCustomerStub
     let org
     let user
-    let userId = 23423
-    let userGithubId = 1981198
-    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userId = 23423
+    const userGithubId = 1981198
+    const stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userEmail = 'jorge@runnable.com'
 
     beforeEach('Create mocks', () => {
       org = {
@@ -256,7 +257,7 @@ describe('Stripe', function () {
     })
 
     it('should update the customer', () => {
-      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .then(() => {
           sinon.assert.calledOnce(updateCustomerStub)
           sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, sinon.match.object)
@@ -264,11 +265,12 @@ describe('Stripe', function () {
     })
 
     it('should update the customer with the Stripe token and the correct metadata', () => {
-      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .then(() => {
           sinon.assert.calledOnce(updateCustomerStub)
           sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, {
             source: stripeTokenId,
+            email: userEmail,
             metadata: {
               paymentMethodOwnerId: userId,
               paymentMethodOwnerGithubId: userGithubId
@@ -280,7 +282,7 @@ describe('Stripe', function () {
     it('should throw an error if the org has no `stripeCustomerId`', done => {
       delete org.stripeCustomerId
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err.message).to.match(/stripeCustomerId/i)
@@ -292,7 +294,7 @@ describe('Stripe', function () {
       let thrownErr = new Error()
       updateCustomerStub.rejects(thrownErr)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
@@ -305,7 +307,7 @@ describe('Stripe', function () {
       thrownError.type = 'StripeCardError'
       updateCustomerStub.rejects(thrownError)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
@@ -320,7 +322,7 @@ describe('Stripe', function () {
       thrownError.type = 'StripeInvalidRequestError'
       updateCustomerStub.rejects(thrownError)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
