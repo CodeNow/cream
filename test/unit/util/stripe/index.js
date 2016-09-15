@@ -1143,7 +1143,7 @@ describe('Stripe', function () {
         .catch(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(EntityNotFoundError)
-          expect(err.message).to.match(/no.*paymentMethodOwner.*found.*org/i)
+          expect(err.message).to.match(/no.*paymentMethodOwnerId.*found.*org/i)
         })
     })
 
@@ -1155,7 +1155,7 @@ describe('Stripe', function () {
         .catch(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(EntityNotFoundError)
-          expect(err.message).to.match(/no.*paymentMethodOwner.*found.*org/i)
+          expect(err.message).to.match(/no.*paymentMethodOwnerGithubId.*found.*org/i)
         })
     })
 
