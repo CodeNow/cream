@@ -25,7 +25,16 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe.only('#stripe.invoice.payment-failed Integration Test', () => {
+describe('#stripe.invoice.payment-failed Integration Test', function () {
+  /**
+   * This tests takes about 4 minutes to successfully run, since Stripe
+   * takes some minutes to create an invoice for a customer who's trial has
+   * ended. This is the only way to trigger a `payment_failed` event.
+   *
+   * For that reason, this tests won't be run as a normal part of the test flow.
+   */
+  if (!process.env.RUN_SLOW_TESTS) this.pending = true
+
   let publisher
   let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
   let orgId = org.id

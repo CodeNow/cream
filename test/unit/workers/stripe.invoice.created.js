@@ -47,8 +47,8 @@ describe('#stripe.invoice.created', () => {
 
   beforeEach('Stub out', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
-    updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
     updateInvoiceWithPaymentMethodOwnerStub = sinon.stub(stripe.invoices, 'updateWithPaymentMethodOwner').resolves()
+    updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
   })
   afterEach(() => {
