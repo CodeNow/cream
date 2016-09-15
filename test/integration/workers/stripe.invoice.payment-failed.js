@@ -18,6 +18,7 @@ if (process.env.TEST_STUB_OUT_BIG_POPPA) {
 const runnableAPI = require('util/runnable-api-client')
 const stripe = require('util/stripe')
 const stripeClient = stripe.stripeClient
+const rabbitmq = require('util/rabbitmq')
 
 const testUtil = require('../../util')
 
@@ -35,6 +36,8 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
   let stripeInvoice
   let updateNotifiedAdminPaymentFailedSpy
   let trialEnd
+  const paymentMethodOwnerId = 1
+  const paymentMethodOwnerGithubId = 198198
 
   // HTTP
   before('Start HTTP server', () => httpServer.start())
@@ -44,13 +47,19 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
   before('Login into runnable API', () => runnableAPI.login())
   after('Logout into runnable API', () => runnableAPI.logout())
 
+  // RabbitMQ Client
+  before('Connect to RabbitMQ', () => rabbitmq.connect())
+  after('Disconnect from RabbitMQ', () => rabbitmq.disconnect())
+
   // RabbitMQ
   before('Connect to RabbitMQ', () => {
     return testUtil.connectToRabbitMQ(workerServer, [], ['stripe.invoice.payment-failed'])
       .then(p => { publisher = p })
   })
-  after('Disconnect from RabbitMQ', () => {
+  after('Disconnect from RabbitMQ', function () {
+    this.timeout(5000)
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   before('Create customer, subscription, invoice and get event', function () {
@@ -68,17 +77,19 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
       stripeTokenId = stripeToken.id
       return stripeClient.customers.create({
         description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
-        source: stripeTokenId
+        source: stripeTokenId,
+        metadata: {
+          paymentMethodOwnerId: paymentMethodOwnerId,
+          paymentMethodOwnerGithubId: paymentMethodOwnerGithubId
+        }
       })
     })
     .then(function createSubscription (stripeCustomer) {
       // Create new subscription and create charge right now
       // This will automatically create an invoice
       stripeCustomerId = stripeCustomer.id
-      console.log('STRIPE CUST', stripeCustomerId)
       // Warning: Request might fail if it takes more than 5 seconds
       trialEnd = moment().add(2, 'seconds')
-      console.log('TRIAL_END', trialEnd.format('X'))
       return stripeClient.subscriptions.create({
         customer: stripeCustomerId,
         plan: 'runnable-starter',
@@ -86,14 +97,14 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
       })
     })
   })
-  // after('Clean up Stripe', () => {
-    // // Deleting the customer deletes the subscription
-    // return stripeClient.customers.del(stripeCustomerId)
-  // })
+  after('Clean up Stripe', () => {
+    // Deleting the customer deletes the subscription
+    return stripeClient.customers.del(stripeCustomerId)
+  })
 
   // BigPoppa client
   before('Spy on updateOrganization', () => {
-    updateNotifiedAdminPaymentFailedSpy = sinon.spy(stripe.invoice, 'updateNotifiedAdminPaymentFailedSpy')
+    updateNotifiedAdminPaymentFailedSpy = sinon.spy(stripe.invoices, 'updateNotifiedAdminPaymentFailed')
   })
   after('Restore updateOrganization', () => {
     updateNotifiedAdminPaymentFailedSpy.restore()
@@ -119,7 +130,11 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
   })
 
   before('Pay unpaid invoice', function () {
-    this.timeout(5000 * 1000 * 60) // Five minutes. See note at the bottom
+    /**
+     * It takes about two minutes for Stripe to create an invoice for
+     * an expired account
+     */
+    this.timeout(5000 * 1000 * 60) // Five minutes
     const findInvoice = Promise.method(() => {
       return stripeClient.invoices.list(
         { customer: stripeCustomerId }
@@ -136,6 +151,7 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
         return stripeClient.invoices.pay(stripeInvoice.id)
       })
       .catch(err => {
+        // Card should be declined (That's what we're testing)
         if (!err.message.match(/your.*card.*was.*declined/i)) {
           throw err
         }
@@ -157,18 +173,23 @@ describe.only('#stripe.invoice.payment-failed Integration Test', () => {
       })
   })
 
-  it('should have updated the invoice in Stripe', () => {
+  it('should have updated the invoice in Stripe', function () {
+    this.timeout(10000)
     const checkPathOrganizationStub = Promise.method(() => {
       return !!updateNotifiedAdminPaymentFailedSpy.called
     })
-    return testUtil.poll(checkPathOrganizationStub, 100, 5000)
+    return testUtil.poll(checkPathOrganizationStub, 200, 10000)
       .then(function checkIfInvoiceWasUpdated () {
         return stripeClient.invoices.retrieve(stripeInvoice.id)
       })
       .then(function (invoice) {
+        console.log('invoice', invoice)
         expect(invoice.metadata).to.be.an('object')
-        expect(invoice.metadata.paymentMethodOwnerId).to.be.a('string')
-        expect(invoice.metadata.paymentMethodOwnerGithubId).to.be.a('string')
+        expect(invoice.paid).to.equal(false)
+        expect(invoice.attempted).to.equal(true)
+        expect(invoice.metadata.notifiedAdminPaymentFailedUserId).to.be.a('string')
+        expect(invoice.metadata.notifiedAdminPaymentFailedUserId).to.equal(paymentMethodOwnerId.toString())
+        expect(invoice.metadata.notifiedAdminPaymentFailed).to.be.a('string')
       })
   })
 })
