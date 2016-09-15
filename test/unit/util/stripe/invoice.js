@@ -118,7 +118,7 @@ describe('StripeInvoiceUtils', function () {
         })
     })
 
-    it('should throw any errors throws by the client', done => {
+    it('should throw any errors throwns by the client', done => {
       let thrownErr = new Error()
       __updateMetadataStubdataStub.rejects(thrownErr)
 
@@ -169,11 +169,55 @@ describe('StripeInvoiceUtils', function () {
         })
     })
 
-    it('should throw any errors throws by the client', done => {
+    it('should throw any errors thrown by the client', done => {
       let thrownErr = new Error()
       updateInvoiceStub.rejects(thrownErr)
 
       StripeInvoiceUtils._updateMetadata(invoiceId, customer)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('#updateNotifiedAdminPaymentFailed', () => {
+    let updateInvoiceStub
+    const invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
+    const userId = 23423
+    const notificationSentTime = '2016-09-15T17:59:43.468Z'
+
+    beforeEach('Stub out method', () => {
+      updateInvoiceStub = sinon.stub(stripeClient.invoices, 'update').resolves()
+    })
+
+    afterEach('Restore stub', () => {
+      updateInvoiceStub.restore()
+    })
+
+    it('should update the invoice with the corrrect metadata', () => {
+      StripeInvoiceUtils.updateNotifiedAdminPaymentFailed(invoiceId, userId, notificationSentTime)
+        .then(() => {
+          sinon.assert.calledOnce(updateInvoiceStub)
+          sinon.assert.calledWithExactly(
+            updateInvoiceStub,
+            invoiceId,
+            {
+              metadata: {
+                notifiedAdminPaymentFailedUserId: userId,
+                notifiedAdminPaymentFailed: notificationSentTime
+              }
+            }
+          )
+        })
+    })
+
+    it('should throw any errors thrown by the client', done => {
+      let thrownErr = new Error()
+      updateInvoiceStub.rejects(thrownErr)
+
+      StripeInvoiceUtils.updateNotifiedAdminPaymentFailed(invoiceId, userId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
