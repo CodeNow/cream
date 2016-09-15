@@ -6,6 +6,7 @@ const expect = require('chai').expect
 require('sinon-as-promised')(Promise)
 
 const StripeInvoiceUtils = require('util/stripe/invoice')
+const EntityNotFoundError = require('errors/entity-not-found-error')
 const stripeClient = require('util/stripe/client')
 
 describe('StripeInvoiceUtils', function () {
@@ -20,6 +21,61 @@ describe('StripeInvoiceUtils', function () {
       githubId: githubId,
       stripeCustomerId: stripeCustomerId
     }
+  })
+
+  describe('#getInvoice', () => {
+    let getInvoiceStub
+    const invoiceId = 'in_234234'
+    const invoice = {}
+
+    beforeEach('stub out Stripe API calls', () => {
+      getInvoiceStub = sinon.stub(stripeClient.invoices, 'retrieve').resolves(invoice)
+    })
+
+    afterEach('restore Stripe API calls', () => {
+      getInvoiceStub.restore()
+    })
+
+    it('should fetch the invoice', () => {
+      return StripeInvoiceUtils.get(invoiceId)
+        .then(res => {
+          sinon.assert.calledOnce(getInvoiceStub)
+          sinon.assert.calledWithExactly(
+            getInvoiceStub,
+            invoiceId
+          )
+          expect(res).to.equal(invoice)
+        })
+    })
+
+    it('should return ', () => {
+      return StripeInvoiceUtils.get(invoiceId)
+        .then(res => {
+        })
+    })
+
+    it('should throw an EntityNotFoundError if the invoice is not found', done => {
+      let thrownErr = new Error('No such invoice: asdfasdf')
+      thrownErr.type = 'invalid_request_error'
+      getInvoiceStub.rejects(thrownErr)
+
+      StripeInvoiceUtils.get(invoice)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          done()
+        })
+    })
+
+    it('should throw any errors', done => {
+      let thrownErr = new Error('hello')
+      getInvoiceStub.rejects(thrownErr)
+
+      StripeInvoiceUtils.get(invoiceId)
+        .asCallback(err => {
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
   })
 
   describe('#updateWithPaymentMethodOwner', () => {
