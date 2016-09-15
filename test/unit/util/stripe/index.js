@@ -9,6 +9,7 @@ require('sinon-as-promised')(Promise)
 const runnableClient = require('util/runnable-api-client')
 const Stripe = require('util/stripe')
 const stripeClient = require('util/stripe/client')
+const testUtil = require('../../../util')
 
 const DiscountService = require('services/discount-service')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
@@ -1093,6 +1094,78 @@ describe('Stripe', function () {
       Stripe.updateSubscriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
+
+  describe('#getCustomerPaymentMethodOwner', () => {
+    let getCustomerStub
+    let customer
+    const stripeCustomerId = 'cus_23429'
+    const paymentMethodOwnerId = '1' // Metadata are always strings
+    const paymentMethodOwnerGithubId = '1981198' // Metadata are always strings
+
+    beforeEach('Stub out methods', () => {
+      customer = {
+        metadata: {
+          paymentMethodOwnerId: paymentMethodOwnerId,
+          paymentMethodOwnerGithubId: paymentMethodOwnerGithubId
+        }
+      }
+      getCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
+    })
+    afterEach('Restore methods', () => {
+      getCustomerStub.restore()
+    })
+
+    it('should get the customer', () => {
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(() => {
+          sinon.assert.calledOnce(getCustomerStub)
+          sinon.assert.calledWith(getCustomerStub, stripeCustomerId)
+        })
+    })
+
+    it('should return an object with the owner id and github id', () => {
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(res => {
+          expect(res.id).to.equal(paymentMethodOwnerId)
+          expect(res.githubId).to.equal(paymentMethodOwnerGithubId)
+        })
+    })
+
+    it('should throw an EntityNotFoundError if an id is missing', () => {
+      delete customer.metadata.paymentMethodOwnerId
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          expect(err.message).to.match(/no.*paymentMethodOwner.*found.*org/i)
+        })
+    })
+
+    it('should throw an EntityNotFoundError if an id is missing', () => {
+      delete customer.metadata.paymentMethodOwnerGithubId
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          expect(err.message).to.match(/no.*paymentMethodOwner.*found.*org/i)
+        })
+    })
+
+    it('should throw any errors by `getCustomer`', () => {
+      let thrownErr = new Error('yo')
+      getCustomerStub.rejects(thrownErr)
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
           expect(err).to.equal(thrownErr)
         })
     })
