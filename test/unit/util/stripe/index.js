@@ -1130,8 +1130,8 @@ describe('Stripe', function () {
     it('should return an object with the owner id and github id', () => {
       return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
         .then(res => {
-          expect(res.id).to.equal(paymentMethodOwnerId)
-          expect(res.githubId).to.equal(paymentMethodOwnerGithubId)
+          expect(res.id).to.equal(parseInt(paymentMethodOwnerId, 10))
+          expect(res.githubId).to.equal(parseInt(paymentMethodOwnerGithubId, 10))
         })
     })
 
