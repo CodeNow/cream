@@ -214,7 +214,7 @@ describe('#stripe.invoice.payment-failed', () => {
             publishEventStub,
             'organization.invoice.payment-failed',
             {
-              invoicePaymentHasFailedFor24Hours: true,
+              invoicePaymentHasFailedFor24Hours: false,
               organization: {
                 id: orgId,
                 name: orgName
