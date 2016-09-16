@@ -12,7 +12,7 @@ const moment = require('moment')
  * customer who's invoices have just not gone through.
  *
  * This script syncs up the `trialEnd` property in the database
- *.
+ */
 
 const logger = require('util/logger').child({ module: 'sync-6-hour-diff' })
 // Dry run by default
