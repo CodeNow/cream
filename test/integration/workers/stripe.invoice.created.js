@@ -81,10 +81,10 @@ describe('#stripe.invoice.created Integration Test', () => {
     })
     .spread(function createSubscription (stripeCustomer, instances) {
       // Always ensure that we're going to actually change the plan
-      if (instances.length > 15) {
+      if (instances.length > 2) {
         planId = 'runnable-plus'
       } else {
-        planId = 'runnable-starter'
+        planId = 'runnable-basic'
       }
       // Create new subscription and create charge right now
       // This will automatically create an invoice
