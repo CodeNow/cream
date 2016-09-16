@@ -15,7 +15,6 @@ module.exports = class TestUtil {
           return Promise.delay(interval).then(pollRecursive)
         })
     }
-
     return pollRecursive()
       .timeout(timeout)
   }
