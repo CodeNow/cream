@@ -17,7 +17,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
 const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-succeeded').jobSchema
 
-describe.only('#stripe.invoice.payment-succeeded', () => {
+describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
@@ -143,6 +143,20 @@ describe.only('#stripe.invoice.payment-succeeded', () => {
           done()
         })
     })
+
+    it('should throw a `WorkerStopError` if the invoice is for a trial', done => {
+      // Make this a trial subscription
+      subscription.current_period_end = trialEnd.format('X')
+      getOrganizationsStub.resolves(subscription)
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/invoice.*for.*trial.*period/i)
+          done()
+        })
+    })
   })
 
   describe('Main Functionality', () => {
@@ -163,6 +177,14 @@ describe.only('#stripe.invoice.payment-succeeded', () => {
         .then(() => {
           sinon.assert.calledOnce(getOrganizationsStub)
           sinon.assert.calledWithExactly(getOrganizationsStub, { stripeCustomerId: stripeCustomerId })
+        })
+    })
+
+    it('should fetch the subscription', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, stripeCustomerId)
         })
     })
 
