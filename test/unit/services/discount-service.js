@@ -42,7 +42,7 @@ describe('DiscountService', () => {
     })
 
     it('should not return any  the coupon if past GA', () => {
-      org.created = '2017-03-20T07:00:00.000Z' // An hour after GA deadline
+      org.created = '2017-10-01T07:00:00.000Z' // An hour after GA deadline
       let planId = DiscountService.getCouponAtSignUpTime(org)
       expect(planId).to.equal(null)
     })
