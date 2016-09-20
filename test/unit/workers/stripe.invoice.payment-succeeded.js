@@ -30,7 +30,6 @@ describe('#stripe.invoice.payment-succeeded', () => {
   let getSubscriptionForOrganizationStub
   let subscription
   let activePeriodEnd = moment(1471050735, 'X')
-  let trialEnd = moment(1471030735, 'X')
 
   beforeEach(() => {
     validJob = { tid: tid, stripeEventId: eventId }
@@ -63,7 +62,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
       }
     }
     subscription = {
-      trial_end: trialEnd.format('X'),
+      status: 'active',
       current_period_end: activePeriodEnd.format('X')
     }
   })
@@ -146,7 +145,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
 
     it('should throw a `WorkerStopError` if the invoice is for a trial', done => {
       // Make this a trial subscription
-      subscription.current_period_end = trialEnd.format('X')
+      subscription.status = 'trialing'
       getOrganizationsStub.resolves(subscription)
 
       ProcessPaymentSucceeded(validJob)
