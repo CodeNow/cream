@@ -135,7 +135,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
     })
   })
 
-  it('should have pathced the organization', () => {
+  it('should have patched the organization', () => {
     const checkPathOrganizationStub = Promise.method(() => {
       return !!updateOrganizationSpy.called
     })
