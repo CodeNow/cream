@@ -35,7 +35,7 @@ Promise.resolve()
     orgIds.push(org.id)
     log.trace({ orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'Fetch subscription')
     return stripe.getSubscriptionForOrganization(org.stripeCustomerId)
-      .then(sub => org.subscription = sub)
+      .then(sub => { org.subscription = sub })
       .return(true)
       .catch(err => {
         log.trace({ err, orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'No subscription found')
