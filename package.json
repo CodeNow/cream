@@ -1,6 +1,6 @@
 {
   "name": "cream",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Payments microservice for Runnable",
   "main": "index.js",
   "scripts": {
