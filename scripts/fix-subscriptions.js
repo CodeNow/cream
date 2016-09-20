@@ -31,7 +31,7 @@ Promise.resolve()
     orgIds.push(org.name)
     log.trace({ orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'Fetch subscription')
     return stripe.getSubscriptionForOrganization(org.stripeCustomerId)
-      .then(sub => org.subscription = sub)
+      .then(sub => { org.subscription = sub })
       .return(false)
       .catch(err => {
         log.trace({ err, orgId: org.id, stripeCustomerId: org.stripeCustomerId }, 'No subscription found')
@@ -39,10 +39,14 @@ Promise.resolve()
       })
   })
   .tap(logOrgs('Orgs with no subscriptions'))
-  .map(function createNewSubscription (org) {
+  .filter(function createNewSubscription (org) {
     return stripe.getPlanIdForOrganizationBasedOnCurrentUsage(org.githubId)
       .then(planId => { org.planId = planId })
-      .return(org)
+      .return(true)
+      .catch(() => {
+        log.error({ org }, 'No plan found for organization')
+        return false
+      })
   })
   .tap(logOrgs('Orgs with plans'))
   .map(function createNewSubscription (org) {
