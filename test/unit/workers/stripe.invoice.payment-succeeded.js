@@ -11,12 +11,13 @@ const bigPoppa = require('util/big-poppa')
 const moment = require('moment')
 
 const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
+const EntityNotFoundError = require('errors/entity-not-found-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
 const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-succeeded').jobSchema
 
-describe('#stripe.invoice.payment-succeeded', () => {
+describe.only('#stripe.invoice.payment-succeeded', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
@@ -26,7 +27,10 @@ describe('#stripe.invoice.payment-succeeded', () => {
   let getOrganizationsStub
   let updateOrganizationStub
   let stripeEvent
+  let getSubscriptionForOrganizationStub
+  let subscription
   let activePeriodEnd = moment(1471050735, 'X')
+  let trialEnd = moment(1471030735, 'X')
 
   beforeEach(() => {
     validJob = { tid: tid, stripeEventId: eventId }
@@ -58,17 +62,23 @@ describe('#stripe.invoice.payment-succeeded', () => {
         }
       }
     }
+    subscription = {
+      trial_end: trialEnd.format('X'),
+      current_period_end: activePeriodEnd.format('X')
+    }
   })
 
   beforeEach('Stub out', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
     updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
+    getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves(subscription)
   })
   afterEach('Restore stubs', () => {
     getOrganizationsStub.restore()
     updateOrganizationStub.restore()
     getEventStub.restore()
+    getSubscriptionForOrganizationStub.restore()
   })
 
   describe('Validation', () => {
@@ -123,26 +133,13 @@ describe('#stripe.invoice.payment-succeeded', () => {
     })
 
     it('should throw a `WorkerStopError` if there are no subscriptions', done => {
-      let lineItem = stripeEvent.data.object.lines.data[0]
-      let newLineItem = Object.assign({}, lineItem)
-      stripeEvent.data.object.lines.data = [newLineItem, lineItem]
+      getSubscriptionForOrganizationStub.rejects(new EntityNotFoundError('No subscription found'))
 
       ProcessPaymentSucceeded(validJob)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err).to.match(/subscription.*line.*item/i)
-          done()
-        })
-    })
-
-    it('should not validate if there are no line items', done => {
-      stripeEvent.data.object.lines.data = []
-      ProcessPaymentSucceeded(validJob)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err).to.match(/1*required.*value/i)
+          expect(err).to.match(/no.*subscription.*found/i)
           done()
         })
     })
