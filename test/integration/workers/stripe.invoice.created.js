@@ -81,7 +81,7 @@ describe('#stripe.invoice.created Integration Test', () => {
     })
     .spread(function createSubscription (stripeCustomer, instances) {
       // Always ensure that we're going to actually change the plan
-      if (instances.length > 2) {
+      if (instances.length <= 2) {
         planId = 'runnable-plus'
       } else {
         planId = 'runnable-basic'
