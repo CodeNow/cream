@@ -152,7 +152,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err).to.match(/invoice.*for.*trial.*period/i)
+          expect(err).to.match(/subscription.*not.*active/i)
           done()
         })
     })
