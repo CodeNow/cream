@@ -42,7 +42,7 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
   let publisher
 
   let updateNotifiedAllMembersPaymentFailedStub
-  let getCurrentInvoiceForOrganizationStub
+  let getCurrentInvoiceStub
   let publishEventStub
   const org3paymentMethodOwnerGithubId = 718305
   const org3paymentMethodOwner = { id: 2, githubId: org3paymentMethodOwnerGithubId }
@@ -94,9 +94,6 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
         })
         .then(invoicesRes => {
           let firstInvoice = invoicesRes.data[0]
-          if (firstInvoice.customer === org3SCustomerId) {
-            org3InvoiceId = firstInvoice.id
-          }
           return stripe.stripeClient.invoices.update(firstInvoice.id, {
             metadata: {
               notifiedAdminPaymentFailed: moment().toISOString()
@@ -122,19 +119,20 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
    * to be created). Instead, stub out the function to get the current invoice
    * and just change the `paid` valude to faled
    */
-  before('Stub out getCurrentInvoiceForOrganization', () => {
-    let _getCurrentInvoiceForOrganizationStub = stripe.invoices.getCurrentInvoiceForOrganization.bind(stripe)
-    getCurrentInvoiceForOrganizationStub = sinon.stub(stripe.invoices, 'getCurrentInvoiceForOrganization', (org) => {
-      return _getCurrentInvoiceForOrganizationStub(org)
+  before('Stub out getCurrentInvoice', () => {
+    let _getCurrentInvoice = stripe.invoices.getCurrentInvoice.bind(stripe)
+    getCurrentInvoiceStub = sinon.stub(stripe.invoices, 'getCurrentInvoice', (org) => {
+      return _getCurrentInvoice(org)
       .tap((invoice) => {
         if (invoice.customer === org3SCustomerId) {
+          org3InvoiceId = invoice.id
           invoice.paid = false
         }
       })
     })
   })
-  after('Restore getCurrentInvoiceForOrganization', () => {
-    getCurrentInvoiceForOrganizationStub.restore()
+  after('Restore getCurrentInvoice', () => {
+    getCurrentInvoiceStub.restore()
   })
 
   // Big Poppa Mock
