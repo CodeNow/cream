@@ -90,4 +90,55 @@ describe('OrganizationService', () => {
       })
     })
   })
+
+  describe('#getAllOrgsWithPaymentMethodInLast48HoursOfGracePeriod', () => {
+    let getOrganizationsStub
+    let getSubscriptionForOrganizationStub
+    const orgWith24HoursInGracePeriodId = 'cust_983453'
+    let org1 = {
+      trialEnd: moment().subtract(26, 'hours').toISOString(),
+      activePeriodEnd: moment().subtract(14, 'days').toISOString(),
+      stripeCustomerId: 'cus_1111'
+    }
+    let org2 = {
+      trialEnd: moment().subtract(90, 'days').toISOString(),
+      activePeriodEnd: moment().subtract(22, 'hours').toISOString(),
+      stripeCustomerId: orgWith24HoursInGracePeriodId
+    }
+
+    beforeEach('Stub out methods', () => {
+      getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves([ org1, org2 ])
+      getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves({})
+    })
+    afterEach('Restore stubs', () => {
+      getOrganizationsStub.restore()
+      getSubscriptionForOrganizationStub.restore()
+    })
+
+    it('should call `getOrganizations`', () => {
+      return OrganizationService.getAllOrgsWithPaymentMethodInLast48HoursOfGracePeriod()
+      .then(() => {
+        sinon.assert.calledOnce(getOrganizationsStub)
+        sinon.assert.calledWithExactly(
+          getOrganizationsStub,
+          {
+            hasPaymentMethod: false,
+            stripeCustomerId: { isNull: false },
+            trialEnd: { lessThan: sinon.match.string },
+            activePeriodEnd: { lessThan: sinon.match.string },
+            gracePeriodEnd: { moreThan: sinon.match.string }
+          }
+        )
+      })
+    })
+
+    it('should filter out organizations that have been in grace period for less then 24 hours', () => {
+      return OrganizationService.getAllOrgsWithPaymentMethodInLast48HoursOfGracePeriod()
+      .then((res) => {
+        expect(res).to.be.an('array')
+        expect(res).to.have.lengthOf(1)
+        expect(res[0]).have.property('stripeCustomerId', orgWith24HoursInGracePeriodId)
+      })
+    })
+  })
 })
