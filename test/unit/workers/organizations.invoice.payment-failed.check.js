@@ -6,7 +6,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const CheckInvoicedPaymentFailed = require('workers/organizations.invoice.payment-failed.check')
 
-describe('#organizations.invoice.payment-failed.check', () => {
+xdescribe('#organizations.invoice.payment-failed.check', () => {
   let validJob
 
   beforeEach(() => {
