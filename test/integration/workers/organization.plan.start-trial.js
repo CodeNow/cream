@@ -25,7 +25,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe('#organiztion.plan.start-trial Integration Test', () => {
+describe.only('#organiztion.plan.start-trial Integration Test', () => {
   let orgId = OrganizationFixture.id
   let orgGithubId = OrganizationFixture.githubId
   let userGithubId = 1981198
