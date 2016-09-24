@@ -137,7 +137,7 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
 
   // Big Poppa Mock
   before('Stub out big-poppa calls', done => {
-    bigPoppaAPI.stub('GET', /organization.*hasPaymentMethod.*false.*stripeCustomerId.*trialEnd/i).returns({
+    bigPoppaAPI.stub('GET', /organization.*hasPaymentMethod.*true.*stripeCustomerId.*trialEnd/i).returns({
       status: 200,
       body: JSON.stringify([org2, org3])
     })

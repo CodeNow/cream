@@ -122,7 +122,7 @@ describe('OrganizationService', () => {
         sinon.assert.calledWithExactly(
           getOrganizationsStub,
           {
-            hasPaymentMethod: false,
+            hasPaymentMethod: true,
             stripeCustomerId: { isNull: false },
             trialEnd: { lessThan: sinon.match.string },
             activePeriodEnd: { lessThan: sinon.match.string },
