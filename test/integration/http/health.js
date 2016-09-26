@@ -15,7 +15,7 @@ describe('Health Integration Test', () => {
   before('Start HTTP server', () => httpServer.start())
   after('Stop HTTP server', () => httpServer.stop())
 
-  it('should change the payment method for an organization', () => {
+  it('should always be sunny in philadelphia', () => {
     return request
       .get(`http://localhost:${process.env.PORT}/health`)
       .then(res => {
