@@ -5,9 +5,12 @@ const sinon = require('sinon')
 const expect = require('chai').expect
 require('sinon-as-promised')(Promise)
 
+const moment = require('moment')
+
 const StripeInvoiceUtils = require('util/stripe/invoice')
 const EntityNotFoundError = require('errors/entity-not-found-error')
 const stripeClient = require('util/stripe/client')
+const testUtil = require('../../../util')
 
 describe('StripeInvoiceUtils', function () {
   let orgMock
@@ -31,7 +34,6 @@ describe('StripeInvoiceUtils', function () {
     beforeEach('stub out Stripe API calls', () => {
       getInvoiceStub = sinon.stub(stripeClient.invoices, 'retrieve').resolves(invoice)
     })
-
     afterEach('restore Stripe API calls', () => {
       getInvoiceStub.restore()
     })
@@ -74,6 +76,80 @@ describe('StripeInvoiceUtils', function () {
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()
+        })
+    })
+  })
+
+  describe('#getCurrentInvoice', () => {
+    let listStub
+    let invoices
+    const stripeCustomerId = 'cus_234923423'
+    const invoice1Id = 'in_18wyJsLYrJgOrBWzHMTPxdMp'
+    const invoice2Id = 'in_18x01xLYrJgOrBWziipjwfM4'
+
+    beforeEach(() => {
+      invoices = [{
+        id: invoice1Id,
+        date: moment().subtract(1, 'hours')
+      }]
+      listStub = sinon.stub(stripeClient.invoices, 'list').resolves({ data: invoices })
+    })
+    afterEach(() => {
+      listStub.restore()
+    })
+
+    it('should call `invoices.list`', () => {
+      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+        .then(() => {
+          sinon.assert.calledOnce(listStub)
+          sinon.assert.calledWithExactly(listStub, { customer: stripeCustomerId })
+        })
+    })
+
+    it('should return an invoice', () => {
+      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+        .then(invoice => {
+          expect(invoice).to.be.an('object')
+          expect(invoice).to.have.property('id', invoice1Id)
+        })
+    })
+
+    it('should return the latest invoice', () => {
+      invoices = [{
+        id: invoice1Id,
+        date: moment().subtract(1, 'days')
+      }, {
+        id: invoice2Id,
+        date: moment().subtract(1, 'hours')
+      }]
+      listStub.resolves({ data: invoices })
+
+      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+        .then(invoice => {
+          expect(invoice).to.be.an('object')
+          expect(invoice).to.have.property('id', invoice2Id)
+        })
+    })
+
+    it('should throw a `EntityNotFoundError` if the invoices is not an array', () => {
+      listStub.resolves({ data: null })
+
+      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+        })
+    })
+
+    it('should throw a `EntityNotFoundError` if no invoices are found', () => {
+      listStub.resolves({ data: [] })
+
+      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
         })
     })
   })
@@ -218,6 +294,48 @@ describe('StripeInvoiceUtils', function () {
       updateInvoiceStub.rejects(thrownErr)
 
       StripeInvoiceUtils.updateNotifiedAdminPaymentFailed(invoiceId, userId, notificationSentTime)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
+
+  describe('#updateNotifiedAllMembersPaymentFailed', () => {
+    let updateInvoiceStub
+    const invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
+    const notificationSentTime = '2016-09-15T17:59:43.468Z'
+
+    beforeEach('Stub out method', () => {
+      updateInvoiceStub = sinon.stub(stripeClient.invoices, 'update').resolves()
+    })
+
+    afterEach('Restore stub', () => {
+      updateInvoiceStub.restore()
+    })
+
+    it('should update the invoice with the corrrect metadata', () => {
+      StripeInvoiceUtils.updateNotifiedAllMembersPaymentFailed(invoiceId, notificationSentTime)
+        .then(() => {
+          sinon.assert.calledOnce(updateInvoiceStub)
+          sinon.assert.calledWithExactly(
+            updateInvoiceStub,
+            invoiceId,
+            {
+              metadata: {
+                notifiedAllMembersPaymentFailed: notificationSentTime
+              }
+            }
+          )
+        })
+    })
+
+    it('should throw any errors thrown by the client', done => {
+      let thrownErr = new Error()
+      updateInvoiceStub.rejects(thrownErr)
+
+      StripeInvoiceUtils.updateNotifiedAllMembersPaymentFailed(invoiceId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)

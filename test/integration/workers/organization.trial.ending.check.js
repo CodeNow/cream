@@ -118,10 +118,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
     // Change trielEndDate on org 3 and 4 to be ending organization
     org2.trialEnd = moment().add(2, 'days')
     org3.trialEnd = moment().add(2, 'days')
-    let stripeCustomerIdQuery = encodeURIComponent(JSON.stringify({ isNull: false }))
-    let trialEndQuery = encodeURIComponent(JSON.stringify({ lessThan: threeDaysFromNowISOString }))
-    let path = `/organization/?hasPaymentMethod=false&stripeCustomerId=${stripeCustomerIdQuery}&trialEnd=${trialEndQuery}`
-    bigPoppaAPI.stub('GET', path).returns({
+    bigPoppaAPI.stub('GET', /organization.*hasPaymentMethod.*false.*stripeCustomerId.*trialEnd/i).returns({
       status: 200,
       body: JSON.stringify([org2, org3])
     })

@@ -192,7 +192,6 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
         return stripeClient.invoices.retrieve(stripeInvoice.id)
       })
       .then(function (invoice) {
-        console.log('invoice', invoice)
         expect(invoice.metadata).to.be.an('object')
         expect(invoice.paid).to.equal(false)
         expect(invoice.attempted).to.equal(true)

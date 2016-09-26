@@ -105,6 +105,48 @@ module.exports = class TestUtil {
     })
   }
 
+  static createCustomerAndSubscriptionWithPaymentMethod (org, trialEnd, paymentMethodOwner) {
+    let randomDigit = () => Math.floor(Math.random() * 10) + ''
+    let securityCode = randomDigit() + randomDigit() + randomDigit()
+    if (!paymentMethodOwner) {
+      paymentMethodOwner = {
+        id: 1, githubId: 1981198
+      }
+    }
+    return stripe.stripeClient.tokens.create({ // Create token. Customer needs token to pay
+      card: {
+        number: '4242424242424242',
+        exp_month: 12,
+        exp_year: 2017,
+        cvc: securityCode
+      }
+    })
+    .then(token => {
+      return stripe.stripeClient.customers.create({
+        description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`,
+        source: token.id,
+        metadata: {
+          paymentMethodOwnerId: paymentMethodOwner.id,
+          paymentMethodOwnerGithubId: paymentMethodOwner.githubId
+        }
+      })
+    })
+    .then(stripeCustomer => {
+      org.stripeCustomerId = stripeCustomer.id
+      return stripe.stripeClient.subscriptions.create({
+        customer: org.stripeCustomerId,
+        plan: 'runnable-starter',
+        trial_end: trialEnd
+      })
+      .then(stripeSubscription => {
+        return Promise.props({
+          customer: stripeCustomer,
+          subscription: stripeSubscription
+        })
+      })
+    })
+  }
+
   static throwIfSuccess () {
     throw new Error('Should not be called')
   }
