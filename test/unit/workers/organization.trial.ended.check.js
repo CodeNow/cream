@@ -9,7 +9,7 @@ const moment = require('moment')
 const testUtil = require('../../util')
 
 const stripe = require('util/stripe')
-const TrialService = require('services/trial-service')
+const OrganizationService = require('services/organization-service')
 const rabbitmq = require('util/rabbitmq')
 
 const CheckForOrganizationsWithEndedTrials = require('workers/organization.trial.ended.check').task
@@ -48,7 +48,7 @@ describe('#organization.trial.ended.check', () => {
   })
 
   beforeEach('Stub out methods', () => {
-    getFilteredOrgsInTrialByTrialEndTimeStub = sinon.stub(TrialService, 'getFilteredOrgsInTrialByTrialEndTime').resolves([org1, org2, org3])
+    getFilteredOrgsInTrialByTrialEndTimeStub = sinon.stub(OrganizationService, 'getFilteredOrgsInTrialByTrialEndTime').resolves([org1, org2, org3])
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
     updateSubscriptionWithTrialEndedNotificationStub = sinon.stub(stripe, 'updateSubscriptionWithTrialEndedNotification').resolves()
     filterSpy = sinon.spy(Promise, 'filter')
