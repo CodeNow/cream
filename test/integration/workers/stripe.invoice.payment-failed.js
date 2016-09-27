@@ -36,7 +36,7 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
   if (!process.env.RUN_SLOW_TESTS) this.pending = true
 
   let publisher
-  let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
+  let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { hasPaymentMethod: true })
   let orgId = org.id
   let orgGithubId = org.githubId
   let stripeCustomerId

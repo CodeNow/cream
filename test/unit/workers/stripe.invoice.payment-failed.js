@@ -19,6 +19,9 @@ const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
 const ProcessPaymentFailure = require('workers/stripe.invoice.payment-failed').task
 const ProcessPaymentFailureSchema = require('workers/stripe.invoice.payment-failed').jobSchema
 
+// Add `hasPaymentMethod` property
+const orgs = OrganizationsFixture.map(org => Object.assign({}, org, { hasPaymentMethod: true }))
+
 describe('#stripe.invoice.payment-failed', () => {
   // Stubs
   let getEventStub
@@ -30,13 +33,13 @@ describe('#stripe.invoice.payment-failed', () => {
 
   // Data
   let validJob
-  const orgId = OrganizationsFixture[0].id
-  const orgName = OrganizationsFixture[0].name
+  const orgId = orgs[0].id
+  const orgName = orgs[0].name
   const tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
   const stripeEventId = 'evt_8tkDWhVUigbGSQ'
   const paymentMethodOwnerId = 6
   const paymentMethodOwnerGithubId = 1981198
-  const stripeCustomerId = OrganizationsFixture[0].stripeCustomerId
+  const stripeCustomerId = orgs[0].stripeCustomerId
   const invoiceId = 'in_18u3k8LYrJgOrBWzOk9UHlFT'
   let paymentMethodOwner
 
@@ -68,7 +71,7 @@ describe('#stripe.invoice.payment-failed', () => {
   beforeEach('Stub out methods', () => {
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
     getInvoiceStub = sinon.stub(stripe.invoices, 'get').resolves(stripeInvoice)
-    getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
+    getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(orgs)
     getCustomerPaymentMethodOwnerStub = sinon.stub(stripe, 'getCustomerPaymentMethodOwner').resolves(paymentMethodOwner)
     updateNotifiedAdminPaymentFailedStub = sinon.stub(stripe.invoices, 'updateNotifiedAdminPaymentFailed').resolves({})
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
@@ -107,6 +110,19 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if no invoice is found', () => {
+      let org = Object.assign({}, orgs[0], { hasPaymentMethod: false })
+      getOrganizationsStub.resolves([ org ])
+
+      return ProcessPaymentFailure(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/organization.*payment.*method/i)
+        })
+    })
+
     it('should throw a `WorkerStopError` if no invoice is found', () => {
       getInvoiceStub.rejects(new EntityNotFoundError('no invoice found'))
 
