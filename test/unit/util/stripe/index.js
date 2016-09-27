@@ -542,7 +542,7 @@ describe('Stripe', function () {
           sinon.assert.calledWithExactly(
             createCustomerStub,
             {
-              description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
+              description: `${orgMock.name} ( organizationId: ${orgMock.id}, githubId: ${orgMock.githubId} )`,
               metadata: {
                 organizationId: orgMock.id,
                 githubId: orgMock.githubId
@@ -562,7 +562,7 @@ describe('Stripe', function () {
           sinon.assert.calledWithExactly(
             createCustomerStub,
             {
-              description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
+              description: `${orgMock.name} ( organizationId: ${orgMock.id}, githubId: ${orgMock.githubId} )`,
               coupon: couponName,
               metadata: {
                 organizationId: orgMock.id,
