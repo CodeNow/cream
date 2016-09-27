@@ -19,6 +19,9 @@ const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
 const ProcessPaymentFailure = require('workers/stripe.invoice.payment-failed').task
 const ProcessPaymentFailureSchema = require('workers/stripe.invoice.payment-failed').jobSchema
 
+// Add `hasPaymentMethod` property
+OrganizationsFixture.map(org => Object.assign(org, { hasPaymentMethod: true }))
+
 describe('#stripe.invoice.payment-failed', () => {
   // Stubs
   let getEventStub
@@ -107,6 +110,19 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if no invoice is found', () => {
+      let org = Object.assign({}, OrganizationsFixture[0], { hasPaymentMethod: false })
+      getOrganizationsStub.resolves([ org ])
+
+      return ProcessPaymentFailure(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/organization.*payment.*method/i)
+        })
+    })
+
     it('should throw a `WorkerStopError` if no invoice is found', () => {
       getInvoiceStub.rejects(new EntityNotFoundError('no invoice found'))
 
