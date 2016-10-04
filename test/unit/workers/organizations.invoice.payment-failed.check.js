@@ -10,7 +10,7 @@ const stripe = require('util/stripe')
 const OrganizationService = require('services/organization-service')
 // const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CheckInvoicedPaymentFailed = require('workers/organizations.invoice.payment-failed.check')
+const CheckInvoicedPaymentFailed = require('workers/organizations.invoice.payment-failed.check').task
 
 describe('#organizations.invoice.payment-failed.check', () => {
   let validJob

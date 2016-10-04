@@ -1,6 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
+const Joi = Promise.promisifyAll(require('joi'))
 const expect = require('chai').expect
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
@@ -12,7 +13,8 @@ const moment = require('moment')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial')
+const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial').task
+const CreateOrganizationInStripeAndStartTrialSchema = require('workers/organization.plan.start-trial').jobSchema
 
 describe('#organization.plan.start-trial', () => {
   let validJob
@@ -52,29 +54,25 @@ describe('#organization.plan.start-trial', () => {
 
   describe('Validation', () => {
     it('should not validate if `tid` is not a uuid', done => {
-      CreateOrganizationInStripeAndStartTrial({ tid: 'world' })
+      Joi.validateAsync({ tid: 'world' }, CreateOrganizationInStripeAndStartTrialSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
           expect(err.message).to.match(/tid/i)
           done()
         })
     })
 
     it('should not validate if `organization.id` is not passed', done => {
-      CreateOrganizationInStripeAndStartTrial({ tid: tid })
+      Joi.validateAsync({ tid: tid }, CreateOrganizationInStripeAndStartTrialSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
           expect(err.message).to.match(/organization/i)
           done()
         })
     })
 
     it('should validate if a valid job is passed', () => {
-      return CreateOrganizationInStripeAndStartTrial(validJob)
+      return CreateOrganizationInStripeAndStartTrial(validJob, CreateOrganizationInStripeAndStartTrialSchema)
     })
   })
 
