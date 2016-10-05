@@ -1,6 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
+const Joi = Promise.promisifyAll(require('joi'))
 const expect = require('chai').expect
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
@@ -10,7 +11,8 @@ const stripe = require('util/stripe')
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const UpdatPlan = require('workers/organization.plan.update')
+const UpdatPlan = require('workers/organization.plan.update').task
+const UpdatPlanSchema = require('workers/organization.plan.update').jobSchema
 
 describe('#organization.plan.update', () => {
   let validJob
@@ -38,29 +40,25 @@ describe('#organization.plan.update', () => {
 
   describe('Validation', () => {
     it('should not validate if `tid` is not a uuid', done => {
-      UpdatPlan({ tid: 'world' })
+      Joi.validateAsync({ tid: 'world' }, UpdatPlanSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
           expect(err.message).to.match(/tid/i)
           done()
         })
     })
 
     it('should not validate if `organizationId` is not passed', done => {
-      UpdatPlan({ tid: tid })
+      Joi.validateAsync({ tid: tid }, UpdatPlanSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
           expect(err.message).to.match(/organization/i)
           done()
         })
     })
 
     it('should validate if a valid job is passed', () => {
-      return UpdatPlan(validJob)
+      return Joi.validateAsync(validJob, UpdatPlanSchema)
     })
   })
 
