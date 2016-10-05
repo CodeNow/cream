@@ -23,7 +23,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe.only('#stripe.invoice.created Integration Test', () => {
+describe('#stripe.invoice.created Integration Test', () => {
   let publisher
   let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
   let orgId = org.id

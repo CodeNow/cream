@@ -16,7 +16,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const ProcessInvoiceCreated = require('workers/stripe.invoice.created').task
 const ProcessInvoiceCreatedSchema = require('workers/stripe.invoice.created').jobSchema
 
-describe.only('#stripe.invoice.created', () => {
+describe('#stripe.invoice.created', () => {
   let validJob
   // let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
   let getOrganizationsStub
