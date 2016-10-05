@@ -1,7 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
-const Joi = Promise.promisifyAll(require('joi'))
+const Joi = require('util/joi')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
@@ -16,7 +16,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const ProcessInvoiceCreated = require('workers/stripe.invoice.created').task
 const ProcessInvoiceCreatedSchema = require('workers/stripe.invoice.created').jobSchema
 
-describe('#stripe.invoice.created', () => {
+describe.only('#stripe.invoice.created', () => {
   let validJob
   // let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
   let getOrganizationsStub
