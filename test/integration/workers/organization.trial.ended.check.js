@@ -24,16 +24,16 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe('#organization.trial.ending.check Integration Test', () => {
+describe('#organization.trial.ended.check Integration Test', () => {
   const trialEnd = moment().add(7, 'days')
   const org2 = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { id: 92, githubId: 10224621, trialEnd })
   const org3 = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { id: 93, githubId: 2828361, trialEnd })
   const org3Id = org3.id
   let org3SubscriptionId
   let publisher
-  let threeDaysFromNowISOString
+  let nowISOString
 
-  let updateSubscriptionWithTrialEndingNotificationStub
+  let updateSubscriptionWithTrialEndedNotificationStub
   let publishEventStub
   let momentStub
 
@@ -54,7 +54,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
 
   // RabbitMQ Publisher
   before('Connect to RabbitMQ', () => {
-    return testUtil.connectToRabbitMQ(workerServer, ['organization.trial.ending.check'], [])
+    return testUtil.connectToRabbitMQ(workerServer, ['organization.trial.ended.check'], [])
       .then(p => { publisher = p })
   })
   after('Disconnect from RabbitMQ', () => {
@@ -62,11 +62,11 @@ describe('#organization.trial.ending.check Integration Test', () => {
   })
 
   before('Spy on calls', () => {
-    updateSubscriptionWithTrialEndingNotificationStub = sinon.spy(stripe, 'updateSubscriptionWithTrialEndingNotification')
+    updateSubscriptionWithTrialEndedNotificationStub = sinon.spy(stripe, 'updateSubscriptionWithTrialEndedNotification')
     publishEventStub = sinon.spy(rabbitmq, 'publishEvent')
   })
   after('Restore spies', () => {
-    updateSubscriptionWithTrialEndingNotificationStub.restore()
+    updateSubscriptionWithTrialEndedNotificationStub.restore()
     publishEventStub.restore()
   })
 
@@ -82,7 +82,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
         // Update org 2 subscription to have correct metadata
         return stripe.stripeClient.subscriptions.update(res2.subscription.id, {
           metadata: {
-            notifiedTrialEnding: moment().toISOString()
+            notifiedTrialEnded: moment().toISOString()
           }
         })
       })
@@ -102,9 +102,9 @@ describe('#organization.trial.ending.check Integration Test', () => {
    * matches and/or regular expressions.
    */
   before('Stub out moment', () => {
-    const threeDaysFromNow = moment().add(72, 'hours')
-    threeDaysFromNowISOString = threeDaysFromNow.toISOString()
-    momentStub = sinon.stub(threeDaysFromNow.constructor.prototype, 'toISOString').returns(threeDaysFromNowISOString)
+    let now = moment()
+    nowISOString = now.toISOString()
+    momentStub = sinon.stub(now.constructor.prototype, 'toISOString').returns(nowISOString)
   })
   after('Restore moment', () => {
     momentStub.restore()
@@ -115,9 +115,9 @@ describe('#organization.trial.ending.check Integration Test', () => {
     // Set hasPaymentMethod to true and false
     org2.hasPaymentMethod = false
     org3.hasPaymentMethod = false
-    // Change trielEndDate on org 3 and 4 to be ending organization
-    org2.trialEnd = moment().add(2, 'days')
-    org3.trialEnd = moment().add(2, 'days')
+    // Change trielEndDate on org 3 and 4 to be ended organization
+    org2.trialEnd = moment().subtract(1, 'days')
+    org3.trialEnd = moment().subtract(1, 'hours')
     bigPoppaAPI.stub('GET', /organization.*hasPaymentMethod.*false.*stripeCustomerId.*trialEnd/i).returns({
       status: 200,
       body: JSON.stringify([org2, org3])
@@ -129,20 +129,20 @@ describe('#organization.trial.ending.check Integration Test', () => {
     bigPoppaAPI.stop(done)
   })
 
-  it('should publish the `organiztion.trial.ending` event', function () {
+  it('should publish the `organiztion.trial.ended` event', function () {
     this.timeout(5000)
-    publisher.publishTask('organization.trial.ending.check', {})
+    publisher.publishTask('organization.trial.ended.check', {})
 
     const checkCustomerCreated = Promise.method(() => {
       // Check if spy has been called
-      return !!updateSubscriptionWithTrialEndingNotificationStub.called
+      return !!updateSubscriptionWithTrialEndedNotificationStub.called
     })
     return testUtil.poll(checkCustomerCreated, 100, 5000)
       .delay(1000)
       .then(function checkStripeForUpdatePlan () {
         // Assert the event was published
         sinon.assert.calledOnce(publishEventStub)
-        sinon.assert.calledWith(publishEventStub, 'organization.trial.ending', {
+        sinon.assert.calledWith(publishEventStub, 'organization.trial.ended', {
           organization: {
             id: org3Id,
             name: org3.name
@@ -152,7 +152,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
         // Assert Stripe was updated
         return stripe.stripeClient.subscriptions.retrieve(org3SubscriptionId)
           .then(subscription => {
-            expect(subscription).to.have.deep.property('metadata.notifiedTrialEnding')
+            expect(subscription).to.have.deep.property('metadata.notifiedTrialEnded')
           })
       })
   })

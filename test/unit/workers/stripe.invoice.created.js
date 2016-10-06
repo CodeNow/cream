@@ -1,7 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
-const Joi = Promise.promisifyAll(require('joi'))
+const Joi = require('util/joi')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
@@ -47,8 +47,8 @@ describe('#stripe.invoice.created', () => {
 
   beforeEach('Stub out', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
+    updateInvoiceWithPaymentMethodOwnerStub = sinon.stub(stripe.invoices, 'updateWithPaymentMethodOwner').resolves()
     updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
-    updateInvoiceWithPaymentMethodOwnerStub = sinon.stub(stripe, 'updateInvoiceWithPaymentMethodOwner').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
   })
   afterEach(() => {

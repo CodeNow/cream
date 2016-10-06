@@ -26,6 +26,7 @@ describe('PaymentMethodService', () => {
     const user1GithubId = 1981198
     const user2Id = 2
     const user2GithubId = 876987
+    const newPaymentMethodOwnerEmail = 'jorge@runnable.com'
     let newPaymentMethodOwner
     let paymentMethod
     let org
@@ -62,7 +63,7 @@ describe('PaymentMethodService', () => {
     })
 
     it('should get the payment method for the org', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledOnce(getPaymentMethodForOrganizationStub)
           sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, org)
@@ -70,15 +71,15 @@ describe('PaymentMethodService', () => {
     })
 
     it('should update the payment method for the organization', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledOnce(updatePaymentMethodForOrganizationStub)
-          sinon.assert.calledWithExactly(updatePaymentMethodForOrganizationStub, org, stripeToken, newPaymentMethodOwner)
+          sinon.assert.calledWithExactly(updatePaymentMethodForOrganizationStub, org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         })
     })
 
-    it('should update the organization', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+    it('should update the organization in Big Poppa', () => {
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledOnce(updateOrganizationStub)
           sinon.assert.calledWithExactly(updateOrganizationStub, orgId, { hasPaymentMethod: true })
@@ -86,12 +87,12 @@ describe('PaymentMethodService', () => {
     })
 
     it('should publish an event for a payment method being added', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
+            { organization: { id: org.id, name: orgName }, paymentMethodOwner: { githubId: user1GithubId, email: newPaymentMethodOwnerEmail } }
           )
         })
     })
@@ -99,24 +100,24 @@ describe('PaymentMethodService', () => {
     it('should publish an event for a payment method being removed if the owner has changed', () => {
       newPaymentMethodOwner.id = user2Id
       newPaymentMethodOwner.githubId = user2GithubId
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledTwice(publishEventStub)
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.removed',
-            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
+            { organization: { id: org.id, name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
           )
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, paymentMethodOwner: { githubId: user2GithubId } }
+            { organization: { id: org.id, name: orgName }, paymentMethodOwner: { githubId: user2GithubId, email: newPaymentMethodOwnerEmail } }
           )
         })
     })
 
     it('should not publish an event for a payment method being removed if the owner has not changed', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
           sinon.assert.calledOnce(publishEventStub)
         })
@@ -125,20 +126,20 @@ describe('PaymentMethodService', () => {
     it('should not publish an event for a payment method being removed if there is no payment method', () => {
       getPaymentMethodForOrganizationStub.resolves(null)
 
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(() => {
-          sinon.assert.calledWithExactly(updatePaymentMethodForOrganizationStub, org, stripeToken, newPaymentMethodOwner)
+          sinon.assert.calledWithExactly(updatePaymentMethodForOrganizationStub, org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
           sinon.assert.calledWithExactly(updateOrganizationStub, orgId, { hasPaymentMethod: true })
           sinon.assert.calledWithExactly(
             publishEventStub,
             'organization.payment-method.added',
-            { organization: { name: orgName }, paymentMethodOwner: { githubId: user1GithubId } }
+            { organization: { id: org.id, name: orgName }, paymentMethodOwner: { githubId: user1GithubId, email: newPaymentMethodOwnerEmail } }
           )
         })
     })
 
     it('should return undefined', () => {
-      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner)
+      return PaymentMethodService.updatePaymentMethodForOrganization(org, stripeToken, newPaymentMethodOwner, newPaymentMethodOwnerEmail)
         .then(res => {
           expect(res).to.equal(undefined)
         })

@@ -135,13 +135,13 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
     })
   })
 
-  it('should have pathced the organization', () => {
+  it('should have patched the organization', () => {
     const checkPathOrganizationStub = Promise.method(() => {
       return !!updateOrganizationSpy.called
     })
     return testUtil.poll(checkPathOrganizationStub, 100, 5000)
       .then(function checkIfOrgWasCorrectlyPatched () {
-        let periodEndTimestamp = stripeEvent.data.object.period_end
+        let periodEndTimestamp = stripeEvent.data.object.lines.data[0].period.end
         let periodEnd = moment(periodEndTimestamp, 'X')
         sinon.assert.calledOnce(updateOrganizationSpy)
         sinon.assert.calledWithExactly(

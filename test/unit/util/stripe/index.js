@@ -8,7 +8,8 @@ require('sinon-as-promised')(Promise)
 
 const runnableClient = require('util/runnable-api-client')
 const Stripe = require('util/stripe')
-const stripeClient = Stripe.stripeClient
+const stripeClient = require('util/stripe/client')
+const testUtil = require('../../../util')
 
 const DiscountService = require('services/discount-service')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
@@ -234,9 +235,10 @@ describe('Stripe', function () {
     let updateCustomerStub
     let org
     let user
-    let userId = 23423
-    let userGithubId = 1981198
-    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userId = 23423
+    const userGithubId = 1981198
+    const stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userEmail = 'jorge@runnable.com'
 
     beforeEach('Create mocks', () => {
       org = {
@@ -256,7 +258,7 @@ describe('Stripe', function () {
     })
 
     it('should update the customer', () => {
-      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .then(() => {
           sinon.assert.calledOnce(updateCustomerStub)
           sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, sinon.match.object)
@@ -264,11 +266,12 @@ describe('Stripe', function () {
     })
 
     it('should update the customer with the Stripe token and the correct metadata', () => {
-      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      return Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .then(() => {
           sinon.assert.calledOnce(updateCustomerStub)
           sinon.assert.calledWith(updateCustomerStub, stripeCustomerId, {
             source: stripeTokenId,
+            email: userEmail,
             metadata: {
               paymentMethodOwnerId: userId,
               paymentMethodOwnerGithubId: userGithubId
@@ -280,7 +283,7 @@ describe('Stripe', function () {
     it('should throw an error if the org has no `stripeCustomerId`', done => {
       delete org.stripeCustomerId
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err.message).to.match(/stripeCustomerId/i)
@@ -292,7 +295,7 @@ describe('Stripe', function () {
       let thrownErr = new Error()
       updateCustomerStub.rejects(thrownErr)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.equal(thrownErr)
@@ -305,7 +308,7 @@ describe('Stripe', function () {
       thrownError.type = 'StripeCardError'
       updateCustomerStub.rejects(thrownError)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
@@ -320,116 +323,12 @@ describe('Stripe', function () {
       thrownError.type = 'StripeInvalidRequestError'
       updateCustomerStub.rejects(thrownError)
 
-      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user)
+      Stripe.updatePaymentMethodForOrganization(org, stripeTokenId, user, userEmail)
         .asCallback(err => {
           expect(err).to.exist
           expect(err).to.be.an.instanceof(ValidationError)
           expect(err.message).to.match(/stripeinvalidrequesterror/i)
           expect(err.message).to.match(/bad.*request/i)
-          done()
-        })
-    })
-  })
-
-  describe('updateInvoiceWithPaymentMethodOwner', () => {
-    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
-    let customer
-    let retrieveCustomerStub
-    let _updateInvoiceMetadataStub
-
-    beforeEach('Stub out method', () => {
-      customer = {}
-      retrieveCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
-      _updateInvoiceMetadataStub = sinon.stub(Stripe, '_updateInvoiceMetadata').resolves()
-    })
-
-    afterEach('Restore stub', () => {
-      retrieveCustomerStub.restore()
-      _updateInvoiceMetadataStub.restore()
-    })
-
-    it('should retrieve the customer', () => {
-      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .then(() => {
-          sinon.assert.calledOnce(retrieveCustomerStub)
-          sinon.assert.calledWithExactly(
-            retrieveCustomerStub,
-            stripeCustomerId
-          )
-        })
-    })
-
-    it('should update the invoice metadata', () => {
-      return Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .then(() => {
-          sinon.assert.calledOnce(_updateInvoiceMetadataStub)
-          sinon.assert.calledWithExactly(
-            _updateInvoiceMetadataStub,
-            invoiceId,
-            customer
-          )
-        })
-    })
-
-    it('should throw any errors throws by the client', done => {
-      let thrownErr = new Error()
-      _updateInvoiceMetadataStub.rejects(thrownErr)
-
-      Stripe.updateInvoiceWithPaymentMethodOwner(orgMock, invoiceId)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.equal(thrownErr)
-          done()
-        })
-    })
-  })
-
-  describe('_updateInvoiceMetadata', () => {
-    let updateInvoiceStub
-    let invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
-    let customer
-    let userId = 23423
-    let userGithubId = 198198
-
-    beforeEach('Stub out method', () => {
-      customer = {
-        metadata: {
-          paymentMethodOwnerId: userId,
-          paymentMethodOwnerGithubId: userGithubId
-        }
-      }
-      updateInvoiceStub = sinon.stub(stripeClient.invoices, 'update').resolves()
-    })
-
-    afterEach('Restore stub', () => {
-      updateInvoiceStub.restore()
-    })
-
-    it('should update the invoice with the corrrect metadata', () => {
-      return Stripe._updateInvoiceMetadata(invoiceId, customer)
-        .then(() => {
-          sinon.assert.calledOnce(updateInvoiceStub)
-          sinon.assert.calledWithExactly(
-            updateInvoiceStub,
-            invoiceId,
-            {
-              metadata: {
-                paymentMethodOwnerId: userId,
-                paymentMethodOwnerGithubId: userGithubId
-              }
-            }
-          )
-        })
-    })
-
-    it('should throw any errors throws by the client', done => {
-      let thrownErr = new Error()
-      updateInvoiceStub.rejects(thrownErr)
-
-      Stripe._updateInvoiceMetadata(invoiceId, customer)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.equal(thrownErr)
           done()
         })
     })
@@ -643,7 +542,7 @@ describe('Stripe', function () {
           sinon.assert.calledWithExactly(
             createCustomerStub,
             {
-              description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
+              description: `${orgMock.name} ( organizationId: ${orgMock.id}, githubId: ${orgMock.githubId} )`,
               metadata: {
                 organizationId: orgMock.id,
                 githubId: orgMock.githubId
@@ -663,7 +562,7 @@ describe('Stripe', function () {
           sinon.assert.calledWithExactly(
             createCustomerStub,
             {
-              description: `Customer for organizationId: ${orgMock.id} / githubId: ${orgMock.githubId}`,
+              description: `${orgMock.name} ( organizationId: ${orgMock.id}, githubId: ${orgMock.githubId} )`,
               coupon: couponName,
               metadata: {
                 organizationId: orgMock.id,
@@ -1195,6 +1094,78 @@ describe('Stripe', function () {
       Stripe.updateSubscriptionWithTrialEndingNotification(subscriptionId, notificationSentTime)
         .asCallback(err => {
           expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+        })
+    })
+  })
+
+  describe('#getCustomerPaymentMethodOwner', () => {
+    let getCustomerStub
+    let customer
+    const stripeCustomerId = 'cus_23429'
+    const paymentMethodOwnerId = '1' // Metadata are always strings
+    const paymentMethodOwnerGithubId = '1981198' // Metadata are always strings
+
+    beforeEach('Stub out methods', () => {
+      customer = {
+        metadata: {
+          paymentMethodOwnerId: paymentMethodOwnerId,
+          paymentMethodOwnerGithubId: paymentMethodOwnerGithubId
+        }
+      }
+      getCustomerStub = sinon.stub(stripeClient.customers, 'retrieve').resolves(customer)
+    })
+    afterEach('Restore methods', () => {
+      getCustomerStub.restore()
+    })
+
+    it('should get the customer', () => {
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(() => {
+          sinon.assert.calledOnce(getCustomerStub)
+          sinon.assert.calledWith(getCustomerStub, stripeCustomerId)
+        })
+    })
+
+    it('should return an object with the owner id and github id', () => {
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(res => {
+          expect(res.id).to.equal(parseInt(paymentMethodOwnerId, 10))
+          expect(res.githubId).to.equal(parseInt(paymentMethodOwnerGithubId, 10))
+        })
+    })
+
+    it('should throw an EntityNotFoundError if an id is missing', () => {
+      delete customer.metadata.paymentMethodOwnerId
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          expect(err.message).to.match(/no.*paymentMethodOwnerId.*found.*org/i)
+        })
+    })
+
+    it('should throw an EntityNotFoundError if an id is missing', () => {
+      delete customer.metadata.paymentMethodOwnerGithubId
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          expect(err.message).to.match(/no.*paymentMethodOwnerGithubId.*found.*org/i)
+        })
+    })
+
+    it('should throw any errors by `getCustomer`', () => {
+      let thrownErr = new Error('yo')
+      getCustomerStub.rejects(thrownErr)
+
+      return Stripe.getCustomerPaymentMethodOwner(stripeCustomerId)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
           expect(err).to.equal(thrownErr)
         })
     })

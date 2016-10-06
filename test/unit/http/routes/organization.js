@@ -395,15 +395,16 @@ describe('HTTP /organization', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let user = org.users[0]
-    let userId = user.id
-    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userId = user.id
+    const stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userEmail = 'jorge@runnable.com'
 
     beforeEach(() => {
       requestStub = {
         params: { id: orgId },
         body: {
           stripeToken: stripeTokenId,
-          user: { id: userId }
+          user: { id: userId, email: userEmail }
         }
       }
     })
@@ -436,7 +437,8 @@ describe('HTTP /organization', () => {
             updatePaymentMethodForOrganizationStub,
             org,
             stripeTokenId,
-            user
+            user,
+            userEmail
           )
         })
     })

@@ -1,7 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
-const Joi = Promise.promisifyAll(require('joi'))
+const Joi = require('util/joi')
 const expect = require('chai').expect
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
@@ -11,6 +11,7 @@ const bigPoppa = require('util/big-poppa')
 const moment = require('moment')
 
 const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
+const EntityNotFoundError = require('errors/entity-not-found-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
@@ -26,6 +27,8 @@ describe('#stripe.invoice.payment-succeeded', () => {
   let getOrganizationsStub
   let updateOrganizationStub
   let stripeEvent
+  let getSubscriptionForOrganizationStub
+  let subscription
   let activePeriodEnd = moment(1471050735, 'X')
 
   beforeEach(() => {
@@ -37,9 +40,30 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
-          period_end: activePeriodEnd.format('X')
+          lines: {
+            data: [
+              {
+                period: {
+                  start: 123,
+                  end: 23423
+                },
+                type: 'invoiceitem'
+              },
+              {
+                period: {
+                  start: 123,
+                  end: activePeriodEnd.format('X')
+                },
+                type: 'subscription'
+              }
+            ]
+          }
         }
       }
+    }
+    subscription = {
+      status: 'active',
+      current_period_end: activePeriodEnd.format('X')
     }
   })
 
@@ -47,11 +71,13 @@ describe('#stripe.invoice.payment-succeeded', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
     updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
+    getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves(subscription)
   })
   afterEach('Restore stubs', () => {
     getOrganizationsStub.restore()
     updateOrganizationStub.restore()
     getEventStub.restore()
+    getSubscriptionForOrganizationStub.restore()
   })
 
   describe('Validation', () => {
@@ -104,6 +130,32 @@ describe('#stripe.invoice.payment-succeeded', () => {
           done()
         })
     })
+
+    it('should throw a `WorkerStopError` if there are no subscriptions', done => {
+      getSubscriptionForOrganizationStub.rejects(new EntityNotFoundError('No subscription found'))
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/no.*subscription.*found/i)
+          done()
+        })
+    })
+
+    it('should throw a `WorkerStopError` if the invoice is for a trial', done => {
+      // Make this a trial subscription
+      subscription.status = 'trialing'
+      getOrganizationsStub.resolves(subscription)
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/subscription.*not.*active/i)
+          done()
+        })
+    })
   })
 
   describe('Main Functionality', () => {
@@ -124,6 +176,14 @@ describe('#stripe.invoice.payment-succeeded', () => {
         .then(() => {
           sinon.assert.calledOnce(getOrganizationsStub)
           sinon.assert.calledWithExactly(getOrganizationsStub, { stripeCustomerId: stripeCustomerId })
+        })
+    })
+
+    it('should fetch the subscription', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, stripeCustomerId)
         })
     })
 
