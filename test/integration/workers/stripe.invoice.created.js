@@ -125,6 +125,7 @@ describe('#stripe.invoice.created Integration Test', () => {
   before('Stub out big-poppa calls', done => {
     // Update customer ID in order to be able to query subscription correctly
     org.stripeCustomerId = stripeCustomerId
+    org.stripeSubscriptionId = stripeSubscriptionId
     bigPoppaAPI.stub('GET', `/organization/?stripeCustomerId=${stripeCustomerId}`).returns({
       status: 200,
       body: [org]

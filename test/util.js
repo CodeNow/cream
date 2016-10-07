@@ -97,6 +97,7 @@ module.exports = class TestUtil {
         plan: 'runnable-starter'
       })
       .then(stripeSubscription => {
+        org.stripeSubscriptionId = stripeSubscription.id
         return Promise.props({
           customer: stripeCustomer,
           subscription: stripeSubscription
