@@ -3,6 +3,7 @@ require('loadenv')()
 
 const Promise = require('bluebird')
 const expect = require('chai').expect
+const moment = require('moment')
 
 const stripeClient = require('util/stripe').stripeClient
 
@@ -32,6 +33,7 @@ describe('OrganizationRouter Integration Test', () => {
   let cardNumber = '4242424242424242'
   let cardExpMonth = 12
   let cardExpYear = 2017
+  const oneWeekFromNow = moment().add(7, 'days')
 
   // HTTP
   before('Start HTTP server', () => httpServer.start())
@@ -59,7 +61,6 @@ describe('OrganizationRouter Integration Test', () => {
   describe('#postPaymentMethod', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
-    let orgGithubId = org.githubId
     let stripeCustomerId
     let stripeSubscriptionId
     let stripeTokenId
@@ -70,23 +71,11 @@ describe('OrganizationRouter Integration Test', () => {
 
     before('Create customer', function () {
       this.timeout(4000)
-      return stripe.stripeClient.customers.create({
-        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
-      })
-      .then(stripeCustomer => {
-        stripeCustomerId = stripeCustomer.id
-        return stripe.stripeClient.tokens.create({
-          card: {
-            number: cardNumber,
-            exp_month: cardExpMonth,
-            exp_year: cardExpYear,
-            cvc: '123'
-          }
-        })
-      })
-      .then(stripeToken => {
-        stripeTokenId = stripeToken.id
-        stripeCardId = stripeToken.card.id
+      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, oneWeekFromNow.toISOString())
+      .then(function (res) {
+        stripeCustomerId = res.customer.id
+        stripeTokenId = res.token.id
+        stripeSubscriptionId = res.subscription.id
       })
     })
     after('Clean up Stripe', () => {
@@ -131,32 +120,21 @@ describe('OrganizationRouter Integration Test', () => {
   })
 
   describe('#getPaymentMethod', () => {
-    let orgId = OrganizationWithStripeCustomerIdFixture.id
-    let orgGithubId = OrganizationWithStripeCustomerIdFixture.githubId
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture.id)
+    const orgId = org.id
     let stripeCustomerId
+    let stripeSubscriptionId
     let stripeTokenId
     let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
     let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
     let userEmail = 'jorge@runnable.com'
 
     before('Create customer', () => {
-      return stripe.stripeClient.customers.create({
-        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`
-      })
-      .then(stripeCustomer => {
-        stripeCustomerId = stripeCustomer.id
-        return stripe.stripeClient.tokens.create({
-          card: {
-            number: cardNumber,
-            exp_month: cardExpMonth,
-            exp_year: cardExpYear,
-            cvc: '123'
-          }
-        })
-      })
-      .then(stripeToken => {
-        stripeTokenId = stripeToken.id
-        // stripeCardId = stripeToken.card.id
+      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, oneWeekFromNow.toISOString())
+      .then(function (res) {
+        stripeCustomerId = res.customer.id
+        stripeTokenId = res.token.id
+        stripeSubscriptionId = res.subscription.id
       })
     })
     after('Clean up Stripe', () => {
@@ -168,6 +146,7 @@ describe('OrganizationRouter Integration Test', () => {
     before('Stub out big-poppa calls', done => {
       // Update customer ID in order to be able to query subscription correctly
       OrganizationWithStripeCustomerIdFixture.stripeCustomerId = stripeCustomerId
+      OrganizationWithStripeCustomerIdFixture.stipreSubscriptionId = stripeSubscriptionId
       bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
         status: 200,
         body: OrganizationWithStripeCustomerIdFixture
@@ -212,24 +191,13 @@ describe('OrganizationRouter Integration Test', () => {
   describe('#getPlans', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
-    let orgGithubId = org.githubId
     let stripeCustomerId
     let planId = 'runnable-plus'
 
     before('Create customer', () => {
-      return stripe.stripeClient.customers.create({
-        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
-        coupon: 'Beta'
-      })
-      .then(stripeCustomer => {
-        stripeCustomerId = stripeCustomer.id
-        return stripe.stripeClient.subscriptions.create({
-          customer: stripeCustomerId,
-          plan: planId,
-          metadata: {
-            users: JSON.stringify(['123', '456', 'ADDED_USER_TO_MEET_MINIMUM'])
-          }
-        })
+      return testUtil.createCustomerAndSubscriptionWithPaymentMethod()
+      .then(function (res) {
+        stripeCustomerId = res.customer.id
       })
     })
     after('Clean up Stripe', () => {

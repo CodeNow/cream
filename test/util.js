@@ -106,7 +106,7 @@ module.exports = class TestUtil {
     })
   }
 
-  static createCustomerAndSubscriptionWithPaymentMethod (org, trialEnd, paymentMethodOwner) {
+  static createCustomerAndSubscriptionWithPaymentMethod (org, trialEnd, paymentMethodOwner, couponName) {
     let randomDigit = () => Math.floor(Math.random() * 10) + ''
     let securityCode = randomDigit() + randomDigit() + randomDigit()
     if (!paymentMethodOwner) {
@@ -122,17 +122,19 @@ module.exports = class TestUtil {
         cvc: securityCode
       }
     })
-    .then(token => {
+    .then(stripeToken => {
       return stripe.stripeClient.customers.create({
         description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`,
-        source: token.id,
+        source: stripeToken.id,
+        coupon: couponName,
         metadata: {
           paymentMethodOwnerId: paymentMethodOwner.id,
           paymentMethodOwnerGithubId: paymentMethodOwner.githubId
         }
       })
+      .then(stripeCustomer => [stripeCustomer, stripeToken])
     })
-    .then(stripeCustomer => {
+    .spread((stripeCustomer, stripeToken) => {
       org.stripeCustomerId = stripeCustomer.id
       return stripe.stripeClient.subscriptions.create({
         customer: org.stripeCustomerId,
@@ -142,7 +144,8 @@ module.exports = class TestUtil {
       .then(stripeSubscription => {
         return Promise.props({
           customer: stripeCustomer,
-          subscription: stripeSubscription
+          subscription: stripeSubscription,
+          token: stripeToken
         })
       })
     })
