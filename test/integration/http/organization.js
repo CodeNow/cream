@@ -71,11 +71,22 @@ describe('OrganizationRouter Integration Test', () => {
 
     before('Create customer', function () {
       this.timeout(4000)
-      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, oneWeekFromNow.toISOString())
+      return testUtil.createCustomerAndSubscription(org, oneWeekFromNow.format('X'))
       .then(function (res) {
         stripeCustomerId = res.customer.id
-        stripeTokenId = res.token.id
         stripeSubscriptionId = res.subscription.id
+        return stripe.stripeClient.tokens.create({
+          card: {
+            number: cardNumber,
+            exp_month: cardExpMonth,
+            exp_year: cardExpYear,
+            cvc: '123'
+          }
+        })
+      })
+      .then(function (stripeToken) {
+        stripeTokenId = stripeToken.id
+        stripeCardId = stripeToken.card.id
       })
     })
     after('Clean up Stripe', () => {
@@ -120,7 +131,7 @@ describe('OrganizationRouter Integration Test', () => {
   })
 
   describe('#getPaymentMethod', () => {
-    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture.id)
+    let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     const orgId = org.id
     let stripeCustomerId
     let stripeSubscriptionId
@@ -130,11 +141,21 @@ describe('OrganizationRouter Integration Test', () => {
     let userEmail = 'jorge@runnable.com'
 
     before('Create customer', () => {
-      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, oneWeekFromNow.toISOString())
+      return testUtil.createCustomerAndSubscription(org, oneWeekFromNow.format('X'))
       .then(function (res) {
         stripeCustomerId = res.customer.id
-        stripeTokenId = res.token.id
         stripeSubscriptionId = res.subscription.id
+        return stripe.stripeClient.tokens.create({
+          card: {
+            number: cardNumber,
+            exp_month: cardExpMonth,
+            exp_year: cardExpYear,
+            cvc: '123'
+          }
+        })
+      })
+      .then(function (stripeToken) {
+        stripeTokenId = stripeToken.id
       })
     })
     after('Clean up Stripe', () => {
@@ -194,8 +215,13 @@ describe('OrganizationRouter Integration Test', () => {
     let stripeCustomerId
     let planId = 'runnable-plus'
 
-    before('Create customer', () => {
-      return testUtil.createCustomerAndSubscriptionWithPaymentMethod()
+    before('Create customer', function () {
+      this.timeout(5000)
+      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, {
+        plan: planId,
+        users: ['123', '456', 'ADDED_USER_TO_MEET_MINIMUM'],
+        coupon: 'Beta'
+      })
       .then(function (res) {
         stripeCustomerId = res.customer.id
       })
@@ -254,40 +280,16 @@ describe('OrganizationRouter Integration Test', () => {
   describe('#getInvoices', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
-    let orgGithubId = org.githubId
     let stripeCustomerId
-    let stripeTokenId
     let stripeInvoice
     let userId = OrganizationWithStripeCustomerIdFixture.users[0].id
     let userGithubId = OrganizationWithStripeCustomerIdFixture.users[0].githubId
 
     before('Create customer, subscription, invoice and get event', function () {
       this.timeout(5000)
-      return stripeClient.tokens.create({ // Create token. Customer needs token to pay
-        card: {
-          number: '4242424242424242',
-          exp_month: 12,
-          exp_year: 2017,
-          cvc: '123'
-        }
-      })
-      .then(function createStripeTokenForPaymentMethod (stripeToken) {
-        // Create new customer with payment method
-        stripeTokenId = stripeToken.id
-        return stripeClient.customers.create({
-          description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
-          source: stripeTokenId
-        })
-      })
-      .then(function createSubscription (stripeCustomer) {
-        // Create new subscription and create charge right now
-        // This will automatically create an invoice
-        stripeCustomerId = stripeCustomer.id
-        return stripeClient.subscriptions.create({
-          customer: stripeCustomerId,
-          plan: 'runnable-starter',
-          trial_end: 'now'
-        })
+      return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org)
+      .then(function (res) {
+        stripeCustomerId = res.customer.id
       })
       .then(function findInvoice (stripeSubscription) {
         // Find the invoice for charge
