@@ -83,9 +83,9 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
   before('Create customer and subscription', function () {
     this.timeout(10000)
     return Promise.all([
-      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org1, +futureTrialEnd.format('X')), // In Trial
-      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org2, 'now'),
-      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org3, 'now', org3paymentMethodOwner),
+      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org1, { trialEnd: +futureTrialEnd.format('X') }), // In Trial
+      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org2),
+      testUtil.createCustomerAndSubscriptionWithPaymentMethod(org3, { paymentMethodOwner: org3paymentMethodOwner }),
       testUtil.createCustomerAndSubscription(org4, {}) // No Payment method
     ])
       .each(res => {
