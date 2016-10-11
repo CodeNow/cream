@@ -3,6 +3,7 @@
 const Promise = require('bluebird')
 const Joi = require('util/joi')
 const sinon = require('sinon')
+const testUtil = require('../../util')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
 
@@ -85,6 +86,20 @@ describe('#stripe.invoice.created', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessInvoiceCreated(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if nor org is found', done => {
       getOrganizationsStub.resolves([])
       ProcessInvoiceCreated(validJob)
@@ -94,10 +109,6 @@ describe('#stripe.invoice.created', () => {
           expect(err.message).to.match(/stripeCustomerId/i)
           done()
         })
-    })
-
-    it('should throw any other errors', () => {
-
     })
   })
 

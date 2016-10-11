@@ -110,6 +110,20 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessPaymentFailure(validJob)
+        .then(testUtil.throwIfSuccess)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if no invoice is found', () => {
       let org = Object.assign({}, orgs[0], { hasPaymentMethod: false })
       getOrganizationsStub.resolves([ org ])

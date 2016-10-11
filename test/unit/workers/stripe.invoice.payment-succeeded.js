@@ -4,6 +4,7 @@ const Promise = require('bluebird')
 const Joi = require('util/joi')
 const expect = require('chai').expect
 const sinon = require('sinon')
+const testUtil = require('../../util')
 require('sinon-as-promised')(Promise)
 
 const stripe = require('util/stripe')
@@ -107,6 +108,20 @@ describe('#stripe.invoice.payment-succeeded', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessPaymentSucceeded(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if no orgs are found', done => {
       getOrganizationsStub.resolves([])
 
