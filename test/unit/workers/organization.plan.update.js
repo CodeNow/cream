@@ -39,15 +39,6 @@ describe('#organization.plan.update', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      Joi.validateAsync({ tid: 'world' }, UpdatPlanSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `organizationId` is not passed', done => {
       Joi.validateAsync({ tid: tid }, UpdatPlanSchema)
         .asCallback(err => {

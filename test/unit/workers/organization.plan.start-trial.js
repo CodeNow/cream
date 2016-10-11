@@ -53,15 +53,6 @@ describe('#organization.plan.start-trial', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      Joi.validateAsync({ tid: 'world' }, CreateOrganizationInStripeAndStartTrialSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `organization.id` is not passed', done => {
       Joi.validateAsync({ tid: tid }, CreateOrganizationInStripeAndStartTrialSchema)
         .asCallback(err => {

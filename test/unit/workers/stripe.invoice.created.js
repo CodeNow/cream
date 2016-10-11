@@ -60,16 +60,6 @@ describe('#stripe.invoice.created', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      Joi.validateAsync({ tid: 'world' }, ProcessInvoiceCreatedSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.isJoi).to.equal(true)
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `id` is not passed', done => {
       Joi.validateAsync({ tid: 'world' }, ProcessInvoiceCreatedSchema)
         .asCallback(err => {

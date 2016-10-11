@@ -86,15 +86,6 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', () => {
-      return Joi.validateAsync({ tid: 'world' }, ProcessPaymentFailureSchema)
-        .then(testUtil.throwIfSuccess)
-        .catch(err => {
-          expect(err).to.exist
-          expect(err.message).to.match(/tid/i)
-        })
-    })
-
     it('should not validate if `stripeCustomerId` is not passed', () => {
       return Joi.validateAsync({ tid: tid }, ProcessPaymentFailureSchema)
         .then(testUtil.throwIfSuccess)
