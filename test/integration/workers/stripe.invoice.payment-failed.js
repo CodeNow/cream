@@ -40,6 +40,7 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
   let orgId = org.id
   let orgGithubId = org.githubId
   let stripeCustomerId
+  let stripeSubscriptionId
   let stripeTokenId
   let stripeEvent
   let stripeInvoice
@@ -104,6 +105,9 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
         plan: 'runnable-starter',
         trial_end: trialEnd.format('X')
       })
+      .then(subscription => {
+        stripeSubscriptionId = subscription.id
+      })
     })
   })
   after('Clean up Stripe', () => {
@@ -123,6 +127,7 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
   before('Stub out big-poppa calls', done => {
     // Update customer ID in order to be able to query subscription correctly
     org.stripeCustomerId = stripeCustomerId
+    org.stripeSubscriptionId = stripeSubscriptionId
     bigPoppaAPI.stub('GET', `/organization/?stripeCustomerId=${stripeCustomerId}`).returns({
       status: 200,
       body: [org]

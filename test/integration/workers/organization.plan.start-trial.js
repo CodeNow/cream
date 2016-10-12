@@ -183,6 +183,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
       .then(function assertProperties (orgs) {
         let org = orgs[0]
         expect(org).to.have.property('stripeCustomerId')
+        expect(org).to.have.property('stripeSubscriptionId')
         expect(org).to.have.property('allowed', true)
         expect(org).to.have.property('isPastTrial', false)
         expect(org).to.have.property('isPastActivePeriod', true)
