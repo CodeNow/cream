@@ -97,7 +97,7 @@ module.exports = class TestUtil {
         customer: org.stripeCustomerId,
         plan: 'runnable-starter'
       }
-      if (!updates) {
+      if (opts.trialEnd) {
         updates.trial_end = opts.trialEnd
       }
       return stripe.stripeClient.subscriptions.create(updates)

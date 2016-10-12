@@ -19,12 +19,13 @@ const CreateOrganizationInStripeAndStartTrialSchema = require('workers/organizat
 describe('#organization.plan.start-trial', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
-  let organizationId = 67898
+  const organizationId = 67898
   let getOrganizationStub
   let updateOrganizationStub
   let createCustomerStub
   let org
-  let stripeCustomerId = 'cus_23423432'
+  const stripeCustomerId = 'cus_23423432'
+  const stripeSubscriptionId = 'sub_23428020'
   let trialEnd = moment(1471135084, 'X')
   let trialEndWithPadding = trialEnd.clone().add(6, 'hours')
 
@@ -41,6 +42,7 @@ describe('#organization.plan.start-trial', () => {
         id: stripeCustomerId
       },
       subscription: {
+        id: stripeSubscriptionId,
         trial_end: trialEnd.format('X')
       }
     })
@@ -150,6 +152,7 @@ describe('#organization.plan.start-trial', () => {
             organizationId,
             {
               stripeCustomerId: stripeCustomerId,
+              stripeSubscriptionId: stripeSubscriptionId,
               trialEnd: trialEndWithPadding.toISOString()
             }
           )
