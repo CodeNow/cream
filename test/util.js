@@ -86,17 +86,21 @@ module.exports = class TestUtil {
     )
   }
 
-  static createCustomerAndSubscription (org, trialEnd) {
+  static createCustomerAndSubscription (org, opts) {
+    if (!opts) opts = {}
     return stripe.stripeClient.customers.create({
       description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`
     })
     .then(stripeCustomer => {
       org.stripeCustomerId = stripeCustomer.id
-      return stripe.stripeClient.subscriptions.create({
+      const updates = {
         customer: org.stripeCustomerId,
-        plan: 'runnable-starter',
-        trial_end: trialEnd || 'now'
-      })
+        plan: 'runnable-starter'
+      }
+      if (!updates) {
+        updates.trial_end = opts.trialEnd
+      }
+      return stripe.stripeClient.subscriptions.create(updates)
       .then(stripeSubscription => {
         org.stripeSubscriptionId = stripeSubscription.id
         return Promise.props({

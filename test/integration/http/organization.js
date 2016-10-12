@@ -71,7 +71,7 @@ describe('OrganizationRouter Integration Test', () => {
 
     before('Create customer', function () {
       this.timeout(4000)
-      return testUtil.createCustomerAndSubscription(org, oneWeekFromNow.format('X'))
+      return testUtil.createCustomerAndSubscription(org, { trialEnd: oneWeekFromNow.format('X') })
       .then(function (res) {
         stripeCustomerId = res.customer.id
         stripeSubscriptionId = res.subscription.id
@@ -141,7 +141,7 @@ describe('OrganizationRouter Integration Test', () => {
     let userEmail = 'jorge@runnable.com'
 
     before('Create customer', () => {
-      return testUtil.createCustomerAndSubscription(org, oneWeekFromNow.format('X'))
+      return testUtil.createCustomerAndSubscription(org, { trialEnd: oneWeekFromNow.format('X') })
       .then(function (res) {
         stripeCustomerId = res.customer.id
         stripeSubscriptionId = res.subscription.id
