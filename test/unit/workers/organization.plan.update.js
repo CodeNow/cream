@@ -30,7 +30,7 @@ describe('#organization.plan.update', () => {
 
   beforeEach(() => {
     getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
-    updateUsersForPlanStub = sinon.stub(stripe, 'updateUsersForPlan').resolves()
+    updateUsersForPlanStub = sinon.stub(stripe.subscriptions, 'updateUsersForPlan').resolves()
   })
 
   afterEach(() => {

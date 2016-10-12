@@ -50,7 +50,7 @@ describe('#organization.trial.ending.check', () => {
   beforeEach('Stub out methods', () => {
     getFilteredOrgsInTrialByTrialEndTimeStub = sinon.stub(OrganizationService, 'getFilteredOrgsInTrialByTrialEndTime').resolves([org1, org2, org3])
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
-    updateSubscriptionWithTrialEndingNotificationStub = sinon.stub(stripe, 'updateSubscriptionWithTrialEndingNotification').resolves()
+    updateSubscriptionWithTrialEndingNotificationStub = sinon.stub(stripe.subscriptions, 'updateSubscriptionWithTrialEndingNotification').resolves()
     filterSpy = sinon.spy(Promise, 'filter')
   })
   afterEach('Retore methods', () => {

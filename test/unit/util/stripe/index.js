@@ -17,7 +17,7 @@ const EntityNotFoundError = require('errors/entity-not-found-error')
 const StripeError = require('errors/stripe-error')
 const ValidationError = require('errors/validation-error')
 
-describe.only('Stripe', function () {
+describe('Stripe', function () {
   let orgMock
   let orgId = 123
   let githubId = 23423

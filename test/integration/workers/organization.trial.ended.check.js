@@ -62,7 +62,7 @@ describe('#organization.trial.ended.check Integration Test', () => {
   })
 
   before('Spy on calls', () => {
-    updateSubscriptionWithTrialEndedNotificationStub = sinon.spy(stripe, 'updateSubscriptionWithTrialEndedNotification')
+    updateSubscriptionWithTrialEndedNotificationStub = sinon.spy(stripe.subscriptions, 'updateSubscriptionWithTrialEndedNotification')
     publishEventStub = sinon.spy(rabbitmq, 'publishEvent')
   })
   after('Restore spies', () => {

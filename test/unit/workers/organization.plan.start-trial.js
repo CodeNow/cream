@@ -152,7 +152,6 @@ describe('#organization.plan.start-trial', () => {
             organizationId,
             {
               stripeCustomerId: stripeCustomerId,
-              stripeSubscriptionId: stripeSubscriptionId,
               trialEnd: trialEndWithPadding.toISOString()
             }
           )
