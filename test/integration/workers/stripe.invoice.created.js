@@ -113,7 +113,7 @@ describe('#stripe.invoice.created Integration Test', () => {
 
   // BigPoppa client
   before('Spy on stripe methods', () => {
-    updatePlanIdForOrganizationBasedOnCurrentUsageSpy = sinon.spy(stripe, 'updatePlanIdForOrganizationBasedOnCurrentUsage')
+    updatePlanIdForOrganizationBasedOnCurrentUsageSpy = sinon.spy(stripe.subscriptions, 'updatePlanIdForOrganizationBasedOnCurrentUsage')
     updateInvoiceWithPaymentMethodOwnerSpy = sinon.spy(stripe.invoices, 'updateWithPaymentMethodOwner')
   })
   after('Restore stripe methods', () => {

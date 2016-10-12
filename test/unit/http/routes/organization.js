@@ -171,8 +171,8 @@ describe('HTTP /organization', () => {
 
     beforeEach('Stub out methods', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
-      getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves(subscription)
-      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
+      getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves(subscription)
+      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe.subscriptions, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
       getDiscountStub = sinon.stub(stripe, 'getDiscount').resolves(null)
       getPlanStub = sinon.stub(stripe, 'getPlan')
       getPlanStub.withArgs(planId).resolves(nextStripePlan)

@@ -72,7 +72,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
     updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
-    getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves(subscription)
+    getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves(subscription)
   })
   afterEach('Restore stubs', () => {
     getOrganizationsStub.restore()

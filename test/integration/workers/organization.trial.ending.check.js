@@ -33,7 +33,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
   let publisher
   let threeDaysFromNowISOString
 
-  let updateSubscriptionWithTrialEndingNotificationStub
+  let updateWithTrialEndingNotificationStub
   let publishEventStub
   let momentStub
 
@@ -62,11 +62,11 @@ describe('#organization.trial.ending.check Integration Test', () => {
   })
 
   before('Spy on calls', () => {
-    updateSubscriptionWithTrialEndingNotificationStub = sinon.spy(stripe, 'updateSubscriptionWithTrialEndingNotification')
+    updateWithTrialEndingNotificationStub = sinon.spy(stripe.subscriptions, 'updateWithTrialEndingNotification')
     publishEventStub = sinon.spy(rabbitmq, 'publishEvent')
   })
   after('Restore spies', () => {
-    updateSubscriptionWithTrialEndingNotificationStub.restore()
+    updateWithTrialEndingNotificationStub.restore()
     publishEventStub.restore()
   })
 
@@ -135,7 +135,7 @@ describe('#organization.trial.ending.check Integration Test', () => {
 
     const checkCustomerCreated = Promise.method(() => {
       // Check if spy has been called
-      return !!updateSubscriptionWithTrialEndingNotificationStub.called
+      return !!updateWithTrialEndingNotificationStub.called
     })
     return testUtil.poll(checkCustomerCreated, 100, 5000)
       .delay(1000)
