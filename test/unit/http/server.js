@@ -19,8 +19,8 @@ describe('Creating a new server', () => {
 
   beforeEach(() => {
     rabbitmqStub = sinon.stub(rabbitmq, 'connect').resolves(true)
-    apiLoginStub = sinon.stub(runnableAPI, 'login').resolves()
-    processStub = sinon.stub(process, 'exit').returns()
+    apiLoginStub = sinon.stub(runnableAPI, 'login').resolves(true)
+    processStub = sinon.stub(process, 'on').returns()
   })
 
   afterEach(() => {
@@ -36,9 +36,10 @@ describe('Creating a new server', () => {
   })
 
   it('should exit the process for a failed rabbitmq connection', () => {
-    rabbitmqStub.rejects({code: 'ECONNREFUSED'})
+    rabbitmqStub.rejects()
     require('http/index.js')
-      .then(function () {
+      .catch(function (err) {
+        expect(err).to.exist
         sinon.assert.calledOnce(processStub)
       })
   })
@@ -46,8 +47,16 @@ describe('Creating a new server', () => {
   it('should exit the process for a failed api connection', () => {
     apiLoginStub.rejects({})
     require('http/index.js')
-      .then(function () {
+      .catch(function (err) {
+        expect(err).to.exist
         sinon.assert.calledOnce(processStub)
+      })
+  })
+
+  it('should not exit the process if connections are valid', () => {
+    require('http/index.js')
+      .then(function (err) {
+        expect(err).not.to.exist
       })
   })
 })
