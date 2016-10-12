@@ -56,7 +56,7 @@ describe('#organiztion.plan.update Integration Test', () => {
   })
 
   before('Spy on updateOrganization', () => {
-    updateUsersForPlanSpy = sinon.spy(stripe, 'updateUsersForPlan')
+    updateUsersForPlanSpy = sinon.spy(stripe.subscriptions, 'updateUsersForPlan')
   })
   after('Restore updateOrganization', () => {
     updateUsersForPlanSpy.restore()
