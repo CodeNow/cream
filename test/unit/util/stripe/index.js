@@ -56,7 +56,7 @@ describe('Stripe', function () {
     beforeEach('Stub out method', () => {
       createCustomerStub = sinon.stub(Stripe, '_createCustomer').resolves(stripeCustomer)
       getPlanIdStub = sinon.stub(StripeSubscriptionUtils, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
-      createSubscriptionStub = sinon.stub(StripeSubscriptionUtils, '_createSubscription').resolves(stripeSubscription)
+      createSubscriptionStub = sinon.stub(StripeSubscriptionUtils, 'createSubscription').resolves(stripeSubscription)
     })
 
     afterEach('Restore stub', () => {

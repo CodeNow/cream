@@ -26,7 +26,7 @@ describe('StripeSubscriptionUtils', function () {
     }
   })
 
-  describe('_createSubscription', () => {
+  describe('createSubscription', () => {
     let createSubscriptionStub
     let subscription
     let planId = 'runnable-starter'
@@ -46,7 +46,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should create a subscription in Stripe', () => {
-      return StripeSubscriptionUtils._createSubscription(stripeCustomerId, users, planId)
+      return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId)
         .then(res => {
           expect(res).to.equal(subscription)
           sinon.assert.calledOnce(createSubscriptionStub)
@@ -63,7 +63,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should call `_getUpdateObjectForUsers`', () => {
-      return StripeSubscriptionUtils._createSubscription(stripeCustomerId, users, planId)
+      return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId)
         .then(res => {
           sinon.assert.calledOnce(generateObjectForUsersStub)
           sinon.assert.calledWithExactly(
@@ -77,7 +77,7 @@ describe('StripeSubscriptionUtils', function () {
       let thrownErr = new Error('hello')
       createSubscriptionStub.rejects(thrownErr)
 
-      StripeSubscriptionUtils._createSubscription(stripeCustomerId, users, planId)
+      StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId)
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()
