@@ -5,6 +5,7 @@ module.exports = {
   createdAt: '2016-08-10T17:45:58.182Z',
   updatedAt: '2016-08-10T17:45:59.772Z',
   stripeCustomerId: 'cus_8yyjnMNQa5NBse',
+  stripeSubscriptionId: 'sub_9MFLqGZWJ9JfV0',
   trialEnd: (new Date()).getTime() + 9999,
   activePeriodEnd: (new Date()).getTime(),
   gracePeriodEnd: (new Date()).getTime(),
