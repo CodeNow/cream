@@ -4,10 +4,6 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
-const ErrorCat = require('error-cat')
-const log = require('util/logger').child({ module: 'http' })
-
-const server = require('http/server')
 const rabbitmq = require('util/rabbitmq')
 const runnableAPI = require('util/runnable-api-client')
 
@@ -28,7 +24,7 @@ describe('Creating a new server', () => {
     processStub.restore()
     rabbitmqStub.restore()
     apiLoginStub.restore()
-    Object.keys(require.cache).forEach(function(key) {
+    Object.keys(require.cache).forEach(function (key) {
       if (key.match(/http\/index.js/)) {
         delete require.cache[key]
       }
