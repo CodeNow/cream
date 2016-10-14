@@ -3,6 +3,7 @@
 const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
+const log = require('util/logger').child({ module: 'http' })
 const expect = require('chai').expect
 const rabbitmq = require('util/rabbitmq')
 const runnableAPI = require('util/runnable-api-client')
@@ -12,11 +13,12 @@ describe('Creating a new server', () => {
   let rabbitmqStub
   let apiLoginStub
   let processStub
+  let logStub
 
   beforeEach(() => {
     rabbitmqStub = sinon.stub(rabbitmq, 'connect').resolves(true)
     apiLoginStub = sinon.stub(runnableAPI, 'login').resolves(true)
-    processStub = sinon.stub(process, 'on').returns()
+    processStub = sinon.stub(process, 'on')
   })
 
   afterEach(() => {
@@ -53,6 +55,24 @@ describe('Creating a new server', () => {
     require('http/index.js')
       .then(function (err) {
         expect(err).not.to.exist
+      })
+  })
+
+  it('should handle unhandled promise exceptions', () => {
+    processStub.yieldsAsync({reporting: {}})
+    apiLoginStub.rejects({})
+    require('http/index.js')
+      .catch(function (err) {
+        expect(err).to.exist
+      })
+  })
+
+  it('should handle unhandled promise exceptions', () => {
+    processStub.yieldsAsync({reporting: {level:'critical'}})
+    apiLoginStub.rejects({})
+    require('http/index.js')
+      .catch(function (err) {
+        expect(err).to.exist
       })
   })
 })
