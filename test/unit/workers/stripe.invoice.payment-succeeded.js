@@ -20,10 +20,11 @@ const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-su
 
 describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
-  let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
-  let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
+  const tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
+  const eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
   let orgId = OrganizationsFixture[0].id
-  let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
+  const stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
+  const stripeSubscriptionId = 'sub_2234n2lk3cs'
   let getEventStub
   let getOrganizationsStub
   let updateOrganizationStub
@@ -41,6 +42,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
+          subscription: stripeSubscriptionId,
           lines: {
             data: [
               {
@@ -168,7 +170,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
       return ProcessPaymentSucceeded(validJob)
     })
 
-    it('should fetch the organization', () => {
+    it('should fetch the event', () => {
       return ProcessPaymentSucceeded(validJob)
         .then(() => {
           sinon.assert.calledOnce(getEventStub)
@@ -188,7 +190,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
       return ProcessPaymentSucceeded(validJob)
         .then(() => {
           sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
-          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, stripeCustomerId)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, stripeSubscriptionId)
         })
     })
 

@@ -20,11 +20,13 @@ describe('OrganizationService', () => {
     const endTime = moment().toISOString()
     let org1 = {
       trialEnd: moment().subtract(7, 'days'),
-      stripeCustomerId: 'cus_234234'
+      stripeCustomerId: 'cus_234234',
+      stripeSubscriptionId: 'sub_234239'
     }
     let org2 = {
       trialEnd: moment().subtract(1, 'days'),
-      stripeCustomerId: 'cus_234234'
+      stripeCustomerId: 'cus_234234',
+      stripeSubscriptionId: 'sub_2888'
     }
 
     beforeEach('Stub out methods', () => {
@@ -57,11 +59,11 @@ describe('OrganizationService', () => {
         sinon.assert.calledTwice(getSubscriptionForOrganizationStub)
         sinon.assert.calledWithExactly(
           getSubscriptionForOrganizationStub,
-          org1.stripeCustomerId
+          org1.stripeSubscriptionId
         )
         sinon.assert.calledWithExactly(
           getSubscriptionForOrganizationStub,
-          org2.stripeCustomerId
+          org2.stripeSubscriptionId
         )
       })
     })

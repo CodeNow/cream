@@ -9,7 +9,7 @@ const moment = require('moment')
 
 const runnableClient = require('util/runnable-api-client')
 const StripeSubscriptionUtils = require('util/stripe/subscriptions')
-const EntityNotFoundError = require('errors/entity-not-found-error')
+const ValidationError = require('errors/validation-error')
 const stripeClient = require('util/stripe/client')
 
 describe('StripeSubscriptionUtils', function () {
@@ -17,12 +17,14 @@ describe('StripeSubscriptionUtils', function () {
   const orgId = 123
   const githubId = 23423
   const stripeCustomerId = 'cus_905mQ5RdbhTUc1'
+  const stripeSubscriptionId = 'sub_23492382378'
 
   beforeEach('Create mock for org', () => {
     orgMock = {
       id: orgId,
       githubId: githubId,
-      stripeCustomerId: stripeCustomerId
+      stripeCustomerId: stripeCustomerId,
+      stripeSubscriptionId: stripeSubscriptionId
     }
   })
 
@@ -87,50 +89,51 @@ describe('StripeSubscriptionUtils', function () {
 
   describe('get', () => {
     let getSubscriptionList
-    let orgStripeCustomerId = 'cust_234234'
+    let orgStripeSubscriptionId = 'sub_234923'
     let firstSubscription = {}
 
     beforeEach('stub out Stripe API calls', () => {
-      let subscriptionListResponse = {
-        data: [
-          firstSubscription
-        ]
-      }
-      getSubscriptionList = sinon.stub(stripeClient.subscriptions, 'list').resolves(subscriptionListResponse)
+      getSubscriptionList = sinon.stub(stripeClient.subscriptions, 'retrieve').resolves(firstSubscription)
     })
 
     afterEach('restore Stripe API calls', () => {
       getSubscriptionList.restore()
     })
 
-    it('should fetch a list of subscription from Stripe', () => {
-      return StripeSubscriptionUtils.get(orgStripeCustomerId)
+    it('should throw a ValidationError an invalid subscription id is passed', done => {
+      StripeSubscriptionUtils.get('cus_20394232') // Customer ID
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(ValidationError)
+          done()
+        })
+    })
+
+    it('should fetch the subscription', () => {
+      return StripeSubscriptionUtils.get(orgStripeSubscriptionId)
         .then(res => {
           sinon.assert.calledOnce(getSubscriptionList)
           sinon.assert.calledWithExactly(
             getSubscriptionList,
-            {
-              limit: 1,
-              customer: orgStripeCustomerId
-
-            }
+            orgStripeSubscriptionId
           )
         })
     })
 
-    it('should return the first subscription from the query', () => {
-      return StripeSubscriptionUtils.get(orgStripeCustomerId)
+    it('should return the subscription', () => {
+      return StripeSubscriptionUtils.get(orgStripeSubscriptionId)
         .then(res => {
           expect(res).to.equal(firstSubscription)
         })
     })
 
-    it('should throw an EntityNotFoundError if the subscription is not found', done => {
-      getSubscriptionList.resolves({ data: [] })
+    it('should throw a ValidationError if the subscription is not found', done => {
+      let originalErr = new Error('No subscription found')
+      originalErr.type = 'StripeInvalidRequestError'
+      getSubscriptionList.rejects(originalErr)
 
-      StripeSubscriptionUtils.get(orgStripeCustomerId)
+      StripeSubscriptionUtils.get(orgStripeSubscriptionId)
         .asCallback(err => {
-          expect(err).to.be.an.instanceof(EntityNotFoundError)
+          expect(err).to.be.an.instanceof(ValidationError)
           done()
         })
     })
@@ -139,7 +142,7 @@ describe('StripeSubscriptionUtils', function () {
       let thrownErr = new Error('hello')
       getSubscriptionList.rejects(thrownErr)
 
-      StripeSubscriptionUtils.get(orgStripeCustomerId)
+      StripeSubscriptionUtils.get(orgStripeSubscriptionId)
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()
@@ -225,33 +228,18 @@ describe('StripeSubscriptionUtils', function () {
     })
   })
 
-  describe('updatePlanIdForOrganizationBasedOnCurrentUsage', () => {
-    let _getSubscriptionForOrganizationStub
+  describe('#updatePlanIdForOrganizationBasedOnCurrentUsage', () => {
     let getPlanIdForOrganizationBasedOnCurrentUsageStub
     let updateSubscriptionStub
     let planId = 'runnable-starter'
-    let subscriptionId = 'sub_18i5aXLYrJgOrBWzYNR9xq87'
 
     beforeEach('Stub out method', () => {
-      let subscription = {
-        id: subscriptionId
-      }
-      _getSubscriptionForOrganizationStub = sinon.stub(StripeSubscriptionUtils, 'get').resolves(subscription)
       getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(StripeSubscriptionUtils, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
       updateSubscriptionStub = sinon.stub(stripeClient.subscriptions, 'update').resolves()
     })
     afterEach('Restore stub', () => {
-      _getSubscriptionForOrganizationStub.restore()
       getPlanIdForOrganizationBasedOnCurrentUsageStub.restore()
       updateSubscriptionStub.restore()
-    })
-
-    it('should fetch the subscription', () => {
-      return StripeSubscriptionUtils.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
-        .then(() => {
-          sinon.assert.calledOnce(_getSubscriptionForOrganizationStub)
-          sinon.assert.calledWithExactly(_getSubscriptionForOrganizationStub, orgMock.stripeCustomerId)
-        })
     })
 
     it('should fetch the plan', () => {
@@ -266,7 +254,7 @@ describe('StripeSubscriptionUtils', function () {
       return StripeSubscriptionUtils.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
         .then(() => {
           sinon.assert.calledOnce(updateSubscriptionStub)
-          sinon.assert.calledWithExactly(updateSubscriptionStub, subscriptionId, { plan: planId })
+          sinon.assert.calledWithExactly(updateSubscriptionStub, stripeSubscriptionId, { plan: planId })
         })
     })
 
@@ -323,68 +311,20 @@ describe('StripeSubscriptionUtils', function () {
     })
   })
 
-  describe('updateUsersForPlan', () => {
-    let getSubscriptionForOrganizationStub
-    let updateUsersForPlanStub
-    let subscriptionId = 'sub_23423234sdf'
-
-    beforeEach('Stub out Stripe methods', () => {
-      let subscription = {
-        id: subscriptionId
-      }
-      getSubscriptionForOrganizationStub = sinon.stub(StripeSubscriptionUtils, 'get').resolves(subscription)
-      updateUsersForPlanStub = sinon.stub(StripeSubscriptionUtils, '_updateUsersForPlan').resolves(subscription)
-    })
-
-    afterEach('Restore Stripe methods', () => {
-      getSubscriptionForOrganizationStub.restore()
-      updateUsersForPlanStub.restore()
-    })
-
-    it('should get the subscription for an organization', () => {
-      return StripeSubscriptionUtils.updateUsersForPlan(orgMock)
-        .then(() => {
-          sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
-          sinon.assert.calledWithExactly(
-            getSubscriptionForOrganizationStub,
-            stripeCustomerId
-          )
-        })
-    })
-
-    it('should update plans for for user', () => {
-      return StripeSubscriptionUtils.updateUsersForPlan(orgMock)
-        .then(() => {
-          sinon.assert.calledOnce(updateUsersForPlanStub)
-          sinon.assert.calledWithExactly(
-            updateUsersForPlanStub,
-            subscriptionId,
-            orgMock.users
-          )
-        })
-    })
-
-    it('should re-throw any errors', done => {
-      let thrownErr = new Error('hello')
-      updateUsersForPlanStub.rejects(thrownErr)
-
-      StripeSubscriptionUtils.updateUsersForPlan(orgMock)
-        .asCallback(err => {
-          expect(err).to.equal(thrownErr)
-          done()
-        })
-    })
-  })
-
-  describe('_updateUsersForPlan', () => {
+  describe('#updateUsersForPlan', () => {
     let updateCustomerStub
     let customer
     let subscriptionId = 23423
     let users
+    let org
 
     beforeEach('stub out Stripe API calls', () => {
       customer = {}
       users = [{ githubId: 1232 }]
+      org = {
+        stripeSubscriptionId: subscriptionId,
+        users
+      }
       updateCustomerStub = sinon.stub(stripeClient.subscriptions, 'update').resolves(customer)
     })
 
@@ -392,8 +332,8 @@ describe('StripeSubscriptionUtils', function () {
       updateCustomerStub.restore()
     })
 
-    it('should create a customer in Stripe', () => {
-      return StripeSubscriptionUtils._updateUsersForPlan(subscriptionId, users)
+    it('should update the customer in Stripe', () => {
+      return StripeSubscriptionUtils.updateUsersForPlan(org)
         .then(res => {
           expect(res).to.equal(customer)
           sinon.assert.calledOnce(updateCustomerStub)
@@ -408,11 +348,23 @@ describe('StripeSubscriptionUtils', function () {
         })
     })
 
-    it('should throw any errors', done => {
+    it('should throw a ValidationError if there is no subscription id', done => {
+      let thrownErr = new Error('No subscription found')
+      thrownErr.type = 'StripeInvalidRequestError'
+      updateCustomerStub.rejects(thrownErr)
+
+      StripeSubscriptionUtils.updateUsersForPlan(org)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(ValidationError)
+          done()
+        })
+    })
+
+    it('should throw any other errors', done => {
       let thrownErr = new Error('hello')
       updateCustomerStub.rejects(thrownErr)
 
-      StripeSubscriptionUtils._updateUsersForPlan(subscriptionId, users)
+      StripeSubscriptionUtils.updateUsersForPlan(org)
         .asCallback(err => {
           expect(err).to.equal(thrownErr)
           done()

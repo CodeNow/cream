@@ -29,6 +29,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   let orgGithubId = OrganizationFixture.githubId
   let userGithubId = 1981198
   let stripeCustomerId
+  let stripeSubscriptionId
   let publisher
 
   let updateOrganizationSpy
@@ -135,6 +136,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
       .delay(1000)
       .then(function checkStripe () {
         stripeCustomerId = updateOrganizationSpy.firstCall.args[1].stripeCustomerId
+        stripeSubscriptionId = updateOrganizationSpy.firstCall.args[1].stripeSubscriptionId
         return stripe.stripeClient.customers.retrieve(stripeCustomerId)
           .then(stripeCustomer => {
             expect(stripeCustomer.description).to.include(OrganizationFixture.id)
@@ -144,13 +146,9 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
             expect(metadata).to.have.property('githubId', OrganizationFixture.githubId.toString())
           })
           .then(function fetchSubscriptions () {
-            return stripe.stripeClient.subscriptions.list({ customer: stripeCustomerId })
+            return stripe.stripeClient.subscriptions.retrieve(stripeSubscriptionId)
           })
-          .then(function checkSubscription (res) {
-            let subscriptions = res.data
-            expect(subscriptions).to.be.an('array')
-            expect(subscriptions).to.have.lengthOf(1)
-            let subscription = subscriptions[0]
+          .then(function checkSubscription (subscription) {
             expect(subscription).to.be.an('object')
             expect(subscription.trial_end).to.be.above((new Date()).getTime() / 1000)
             expect(subscription.plan.id).to.be.a.match(/runnable/i)

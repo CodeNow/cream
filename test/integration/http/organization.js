@@ -213,6 +213,7 @@ describe('OrganizationRouter Integration Test', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let stripeCustomerId
+    let stripeSubscriptionId
     let planId = 'runnable-plus'
 
     before('Create customer', function () {
@@ -224,6 +225,7 @@ describe('OrganizationRouter Integration Test', () => {
       })
       .then(function (res) {
         stripeCustomerId = res.customer.id
+        stripeSubscriptionId = res.subscription.id
       })
     })
     after('Clean up Stripe', () => {
@@ -235,6 +237,7 @@ describe('OrganizationRouter Integration Test', () => {
     before('Stub out big-poppa calls', done => {
       // Update customer ID in order to be able to query subscription correctly
       org.stripeCustomerId = stripeCustomerId
+      org.stripeSubscriptionId = stripeSubscriptionId
       bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
         status: 200,
         body: org

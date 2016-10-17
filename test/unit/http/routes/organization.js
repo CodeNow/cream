@@ -137,6 +137,7 @@ describe('HTTP /organization', () => {
     let orgId = org.id
     let orgGithubId = org.githubId
     let orgStripeCustomerId = org.stripeCustomerId
+    let orgStripeSubscriptionId = org.stripeSubscriptionId
     let getPlanStub
     let getDiscountStub
     let subscription
@@ -198,7 +199,7 @@ describe('HTTP /organization', () => {
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
-          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeCustomerId)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeSubscriptionId)
         })
     })
 
