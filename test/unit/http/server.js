@@ -3,7 +3,6 @@
 const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
-const log = require('util/logger').child({ module: 'http' })
 const expect = require('chai').expect
 const rabbitmq = require('util/rabbitmq')
 const runnableAPI = require('util/runnable-api-client')
@@ -13,7 +12,6 @@ describe('Creating a new server', () => {
   let rabbitmqStub
   let apiLoginStub
   let processStub
-  let logStub
 
   beforeEach(() => {
     rabbitmqStub = sinon.stub(rabbitmq, 'connect').resolves(true)
@@ -68,7 +66,7 @@ describe('Creating a new server', () => {
   })
 
   it('should handle unhandled promise exceptions', () => {
-    processStub.yieldsAsync({reporting: {level:'critical'}})
+    processStub.yieldsAsync({reporting: {level: 'critical'}})
     apiLoginStub.rejects({})
     require('http/index.js')
       .catch(function (err) {
