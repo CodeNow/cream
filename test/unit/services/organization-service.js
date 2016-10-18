@@ -29,7 +29,7 @@ describe('OrganizationService', () => {
 
     beforeEach('Stub out methods', () => {
       getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves([ org1, org2 ])
-      getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves({})
+      getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves({})
     })
     afterEach('Restore stubs', () => {
       getOrganizationsStub.restore()
@@ -108,7 +108,7 @@ describe('OrganizationService', () => {
 
     beforeEach('Stub out methods', () => {
       getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves([ org1, org2 ])
-      getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves({})
+      getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves({})
     })
     afterEach('Restore stubs', () => {
       getOrganizationsStub.restore()

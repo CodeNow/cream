@@ -86,15 +86,6 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', () => {
-      return Joi.validateAsync({ tid: 'world' }, ProcessPaymentFailureSchema)
-        .then(testUtil.throwIfSuccess)
-        .catch(err => {
-          expect(err).to.exist
-          expect(err.message).to.match(/tid/i)
-        })
-    })
-
     it('should not validate if `stripeCustomerId` is not passed', () => {
       return Joi.validateAsync({ tid: tid }, ProcessPaymentFailureSchema)
         .then(testUtil.throwIfSuccess)
@@ -110,6 +101,20 @@ describe('#stripe.invoice.payment-failed', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessPaymentFailure(validJob)
+        .then(testUtil.throwIfSuccess)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if no invoice is found', () => {
       let org = Object.assign({}, orgs[0], { hasPaymentMethod: false })
       getOrganizationsStub.resolves([ org ])

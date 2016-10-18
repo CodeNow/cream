@@ -56,7 +56,7 @@ describe('#organiztion.plan.update Integration Test', () => {
   })
 
   before('Spy on updateOrganization', () => {
-    updateUsersForPlanSpy = sinon.spy(stripe, 'updateUsersForPlan')
+    updateUsersForPlanSpy = sinon.spy(stripe.subscriptions, 'updateUsersForPlan')
   })
   after('Restore updateOrganization', () => {
     updateUsersForPlanSpy.restore()
@@ -89,6 +89,7 @@ describe('#organiztion.plan.update Integration Test', () => {
     org.users = users
     // Update customer ID in order to be able to query subscription correctly
     org.stripeCustomerId = stripeCustomerId
+    org.stripeSubscriptionId = stripeSubscriptionId
     bigPoppaAPI.stub('GET', `/organization/${orgId}`).returns({
       status: 200,
       body: org

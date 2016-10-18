@@ -4,6 +4,7 @@ const Promise = require('bluebird')
 const Joi = require('util/joi')
 const expect = require('chai').expect
 const sinon = require('sinon')
+const testUtil = require('../../util')
 require('sinon-as-promised')(Promise)
 
 const stripe = require('util/stripe')
@@ -71,7 +72,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
     updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
-    getSubscriptionForOrganizationStub = sinon.stub(stripe, 'getSubscriptionForOrganization').resolves(subscription)
+    getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves(subscription)
   })
   afterEach('Restore stubs', () => {
     getOrganizationsStub.restore()
@@ -81,16 +82,6 @@ describe('#stripe.invoice.payment-succeeded', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      Joi.validateAsync({ tid: 'world' }, ProcessPaymentSucceededSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.isJoi).to.equal(true)
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `stripeCustomerId` is not passed', done => {
       Joi.validateAsync({ tid: tid }, ProcessPaymentSucceededSchema)
         .asCallback(err => {
@@ -107,6 +98,20 @@ describe('#stripe.invoice.payment-succeeded', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessPaymentSucceeded(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if no orgs are found', done => {
       getOrganizationsStub.resolves([])
 

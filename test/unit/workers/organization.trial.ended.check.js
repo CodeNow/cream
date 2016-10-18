@@ -18,7 +18,7 @@ describe('#organization.trial.ended.check', () => {
   let validJob
   let getFilteredOrgsInTrialByTrialEndTimeStub
   let publishEventStub
-  let updateSubscriptionWithTrialEndedNotificationStub
+  let updateWithTrialEndedNotificationStub
   let filterSpy
   const org3Id = 3
   const org3Name = 'HelloWorld'
@@ -50,13 +50,13 @@ describe('#organization.trial.ended.check', () => {
   beforeEach('Stub out methods', () => {
     getFilteredOrgsInTrialByTrialEndTimeStub = sinon.stub(OrganizationService, 'getFilteredOrgsInTrialByTrialEndTime').resolves([org1, org2, org3])
     publishEventStub = sinon.stub(rabbitmq, 'publishEvent')
-    updateSubscriptionWithTrialEndedNotificationStub = sinon.stub(stripe, 'updateSubscriptionWithTrialEndedNotification').resolves()
+    updateWithTrialEndedNotificationStub = sinon.stub(stripe.subscriptions, 'updateWithTrialEndedNotification').resolves()
     filterSpy = sinon.spy(Promise, 'filter')
   })
   afterEach('Retore methods', () => {
     getFilteredOrgsInTrialByTrialEndTimeStub.restore()
     publishEventStub.restore()
-    updateSubscriptionWithTrialEndedNotificationStub.restore()
+    updateWithTrialEndedNotificationStub.restore()
     filterSpy.restore()
   })
 
@@ -77,7 +77,7 @@ describe('#organization.trial.ended.check', () => {
       let thrownErr = new Error('hello')
       const orgThatWillFail = Object.assign({}, org2, { 'subscription': { id: 'sub_23423888900' } })
       getFilteredOrgsInTrialByTrialEndTimeStub.resolves([ org1, orgThatWillFail, org3 ])
-      updateSubscriptionWithTrialEndedNotificationStub.onCall(0).rejects(thrownErr)
+      updateWithTrialEndedNotificationStub.onCall(0).rejects(thrownErr)
 
       return CheckForOrganizationsWithEndedTrials(validJob)
       .then(testUtil.throwIfSuccess)
@@ -111,9 +111,9 @@ describe('#organization.trial.ended.check', () => {
     it('should update the subscription with the `notifiedTrialEnded` property for orgs with a subscription', () => {
       return CheckForOrganizationsWithEndedTrials(validJob)
       .then(() => {
-        sinon.assert.calledOnce(updateSubscriptionWithTrialEndedNotificationStub)
+        sinon.assert.calledOnce(updateWithTrialEndedNotificationStub)
         sinon.assert.calledWithExactly(
-          updateSubscriptionWithTrialEndedNotificationStub,
+          updateWithTrialEndedNotificationStub,
           org3.subscription.id,
           sinon.match.string
         )
