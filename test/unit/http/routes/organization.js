@@ -137,6 +137,7 @@ describe('HTTP /organization', () => {
     let orgId = org.id
     let orgGithubId = org.githubId
     let orgStripeCustomerId = org.stripeCustomerId
+    let orgStripeSubscriptionId = org.stripeSubscriptionId
     let getPlanStub
     let getDiscountStub
     let subscription
@@ -171,8 +172,8 @@ describe('HTTP /organization', () => {
 
     beforeEach('Stub out methods', () => {
       getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
-      getSubscriptionForOrganizationStub = sinon.stub(stripe, '_getSubscriptionForOrganization').resolves(subscription)
-      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
+      getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves(subscription)
+      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe.subscriptions, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(planId)
       getDiscountStub = sinon.stub(stripe, 'getDiscount').resolves(null)
       getPlanStub = sinon.stub(stripe, 'getPlan')
       getPlanStub.withArgs(planId).resolves(nextStripePlan)
@@ -198,7 +199,7 @@ describe('HTTP /organization', () => {
       return OrganizationRouter.getPlan(requestStub, responseStub)
         .then(() => {
           sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
-          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeCustomerId)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, orgStripeSubscriptionId)
         })
     })
 
@@ -395,15 +396,16 @@ describe('HTTP /organization', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     let orgId = org.id
     let user = org.users[0]
-    let userId = user.id
-    let stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userId = user.id
+    const stripeTokenId = 'tok_18PE8zLYrJgOrBWzlTPEUiET'
+    const userEmail = 'jorge@runnable.com'
 
     beforeEach(() => {
       requestStub = {
         params: { id: orgId },
         body: {
           stripeToken: stripeTokenId,
-          user: { id: userId }
+          user: { id: userId, email: userEmail }
         }
       }
     })
@@ -436,7 +438,8 @@ describe('HTTP /organization', () => {
             updatePaymentMethodForOrganizationStub,
             org,
             stripeTokenId,
-            user
+            user,
+            userEmail
           )
         })
     })

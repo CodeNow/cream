@@ -81,10 +81,10 @@ describe('#stripe.invoice.created Integration Test', () => {
     })
     .spread(function createSubscription (stripeCustomer, instances) {
       // Always ensure that we're going to actually change the plan
-      if (instances.length > 15) {
+      if (instances.length <= 2) {
         planId = 'runnable-plus'
       } else {
-        planId = 'runnable-starter'
+        planId = 'runnable-basic'
       }
       // Create new subscription and create charge right now
       // This will automatically create an invoice
@@ -112,11 +112,11 @@ describe('#stripe.invoice.created Integration Test', () => {
   })
 
   // BigPoppa client
-  before('Spy on updateOrganization', () => {
-    updatePlanIdForOrganizationBasedOnCurrentUsageSpy = sinon.spy(stripe, 'updatePlanIdForOrganizationBasedOnCurrentUsage')
-    updateInvoiceWithPaymentMethodOwnerSpy = sinon.spy(stripe, 'updateInvoiceWithPaymentMethodOwner')
+  before('Spy on stripe methods', () => {
+    updatePlanIdForOrganizationBasedOnCurrentUsageSpy = sinon.spy(stripe.subscriptions, 'updatePlanIdForOrganizationBasedOnCurrentUsage')
+    updateInvoiceWithPaymentMethodOwnerSpy = sinon.spy(stripe.invoices, 'updateWithPaymentMethodOwner')
   })
-  after('Restore updateOrganization', () => {
+  after('Restore stripe methods', () => {
     updatePlanIdForOrganizationBasedOnCurrentUsageSpy.restore()
     updateInvoiceWithPaymentMethodOwnerSpy.restore()
   })
@@ -125,6 +125,7 @@ describe('#stripe.invoice.created Integration Test', () => {
   before('Stub out big-poppa calls', done => {
     // Update customer ID in order to be able to query subscription correctly
     org.stripeCustomerId = stripeCustomerId
+    org.stripeSubscriptionId = stripeSubscriptionId
     bigPoppaAPI.stub('GET', `/organization/?stripeCustomerId=${stripeCustomerId}`).returns({
       status: 200,
       body: [org]

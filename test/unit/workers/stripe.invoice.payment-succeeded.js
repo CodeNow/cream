@@ -1,9 +1,10 @@
 'use strict'
 
 const Promise = require('bluebird')
-const Joi = Promise.promisifyAll(require('joi'))
+const Joi = require('util/joi')
 const expect = require('chai').expect
 const sinon = require('sinon')
+const testUtil = require('../../util')
 require('sinon-as-promised')(Promise)
 
 const stripe = require('util/stripe')
@@ -11,6 +12,7 @@ const bigPoppa = require('util/big-poppa')
 const moment = require('moment')
 
 const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
+const EntityNotFoundError = require('errors/entity-not-found-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const ProcessPaymentSucceeded = require('workers/stripe.invoice.payment-succeeded').task
@@ -18,14 +20,17 @@ const ProcessPaymentSucceededSchema = require('workers/stripe.invoice.payment-su
 
 describe('#stripe.invoice.payment-succeeded', () => {
   let validJob
-  let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
-  let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
+  const tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
+  const eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
   let orgId = OrganizationsFixture[0].id
-  let stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
+  const stripeCustomerId = 'cus_8tkDWhVUigbGSQ'
+  const stripeSubscriptionId = 'sub_2234n2lk3cs'
   let getEventStub
   let getOrganizationsStub
   let updateOrganizationStub
   let stripeEvent
+  let getSubscriptionForOrganizationStub
+  let subscription
   let activePeriodEnd = moment(1471050735, 'X')
 
   beforeEach(() => {
@@ -37,9 +42,31 @@ describe('#stripe.invoice.payment-succeeded', () => {
         object: {
           object: 'invoice',
           customer: stripeCustomerId,
-          period_end: activePeriodEnd.format('X')
+          subscription: stripeSubscriptionId,
+          lines: {
+            data: [
+              {
+                period: {
+                  start: 123,
+                  end: 23423
+                },
+                type: 'invoiceitem'
+              },
+              {
+                period: {
+                  start: 123,
+                  end: activePeriodEnd.format('X')
+                },
+                type: 'subscription'
+              }
+            ]
+          }
         }
       }
+    }
+    subscription = {
+      status: 'active',
+      current_period_end: activePeriodEnd.format('X')
     }
   })
 
@@ -47,24 +74,16 @@ describe('#stripe.invoice.payment-succeeded', () => {
     getOrganizationsStub = sinon.stub(bigPoppa, 'getOrganizations').resolves(OrganizationsFixture)
     updateOrganizationStub = sinon.stub(bigPoppa, 'updateOrganization').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
+    getSubscriptionForOrganizationStub = sinon.stub(stripe.subscriptions, 'get').resolves(subscription)
   })
   afterEach('Restore stubs', () => {
     getOrganizationsStub.restore()
     updateOrganizationStub.restore()
     getEventStub.restore()
+    getSubscriptionForOrganizationStub.restore()
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      Joi.validateAsync({ tid: 'world' }, ProcessPaymentSucceededSchema)
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err.isJoi).to.equal(true)
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `stripeCustomerId` is not passed', done => {
       Joi.validateAsync({ tid: tid }, ProcessPaymentSucceededSchema)
         .asCallback(err => {
@@ -81,6 +100,20 @@ describe('#stripe.invoice.payment-succeeded', () => {
   })
 
   describe('Errors', () => {
+    it('should throw a `WorkerStopError` if the event is invalid', done => {
+      let newEvent = Object.assign({}, stripeEvent, { type: 'this-event-does-not-exist' })
+      getEventStub.resolves(newEvent)
+
+      return ProcessPaymentSucceeded(validJob)
+        .then(testUtil.throwIfSuccess)
+        .catch(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/validation/i)
+          done()
+        })
+    })
+
     it('should throw a `WorkerStopError` if no orgs are found', done => {
       getOrganizationsStub.resolves([])
 
@@ -104,6 +137,32 @@ describe('#stripe.invoice.payment-succeeded', () => {
           done()
         })
     })
+
+    it('should throw a `WorkerStopError` if there are no subscriptions', done => {
+      getSubscriptionForOrganizationStub.rejects(new EntityNotFoundError('No subscription found'))
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/no.*subscription.*found/i)
+          done()
+        })
+    })
+
+    it('should throw a `WorkerStopError` if the invoice is for a trial', done => {
+      // Make this a trial subscription
+      subscription.status = 'trialing'
+      getOrganizationsStub.resolves(subscription)
+
+      ProcessPaymentSucceeded(validJob)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err).to.match(/subscription.*not.*active/i)
+          done()
+        })
+    })
   })
 
   describe('Main Functionality', () => {
@@ -111,7 +170,7 @@ describe('#stripe.invoice.payment-succeeded', () => {
       return ProcessPaymentSucceeded(validJob)
     })
 
-    it('should fetch the organization', () => {
+    it('should fetch the event', () => {
       return ProcessPaymentSucceeded(validJob)
         .then(() => {
           sinon.assert.calledOnce(getEventStub)
@@ -124,6 +183,14 @@ describe('#stripe.invoice.payment-succeeded', () => {
         .then(() => {
           sinon.assert.calledOnce(getOrganizationsStub)
           sinon.assert.calledWithExactly(getOrganizationsStub, { stripeCustomerId: stripeCustomerId })
+        })
+    })
+
+    it('should fetch the subscription', () => {
+      return ProcessPaymentSucceeded(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(getSubscriptionForOrganizationStub)
+          sinon.assert.calledWithExactly(getSubscriptionForOrganizationStub, stripeSubscriptionId)
         })
     })
 

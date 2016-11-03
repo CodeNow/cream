@@ -5,7 +5,7 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
 
-const Joi = Promise.promisifyAll(require('joi'))
+const Joi = require('util/joi')
 
 const ValidationError = require('errors/validation-error')
 const BaseRouter = require('http/routes/base')

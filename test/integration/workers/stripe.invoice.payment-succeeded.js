@@ -29,6 +29,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
   let orgId = org.id
   let orgGithubId = org.githubId
   let stripeCustomerId
+  let stripeSubscriptionId
   let stripeTokenId
   let stripeInvoice
   let stripeEvent
@@ -80,6 +81,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
       })
     })
     .then(function findInvoice (stripeSubscription) {
+      stripeSubscriptionId = stripeSubscription.id
       // Find the invoice for charge
       return stripeClient.invoices.list({
         customer: stripeCustomerId
@@ -106,6 +108,7 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
   before('Stub out big-poppa calls', done => {
     // Update customer ID in order to be able to query subscription correctly
     org.stripeCustomerId = stripeCustomerId
+    org.stripeSubscriptionId = stripeSubscriptionId
     bigPoppaAPI.stub('GET', `/organization/?stripeCustomerId=${stripeCustomerId}`).returns({
       status: 200,
       body: [org]
@@ -135,13 +138,13 @@ describe('#stripe.invoice.payment-succeeded Integration Test', () => {
     })
   })
 
-  it('should have pathced the organization', () => {
+  it('should have patched the organization', () => {
     const checkPathOrganizationStub = Promise.method(() => {
       return !!updateOrganizationSpy.called
     })
     return testUtil.poll(checkPathOrganizationStub, 100, 5000)
       .then(function checkIfOrgWasCorrectlyPatched () {
-        let periodEndTimestamp = stripeEvent.data.object.period_end
+        let periodEndTimestamp = stripeEvent.data.object.lines.data[0].period.end
         let periodEnd = moment(periodEndTimestamp, 'X')
         sinon.assert.calledOnce(updateOrganizationSpy)
         sinon.assert.calledWithExactly(

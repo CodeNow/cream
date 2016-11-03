@@ -3,6 +3,7 @@
 const Promise = require('bluebird')
 const RabbitMQ = require('ponos/lib/rabbitmq')
 const request = require('request-promise')
+const stripe = require('util/stripe')
 
 module.exports = class TestUtil {
 
@@ -14,7 +15,6 @@ module.exports = class TestUtil {
           return Promise.delay(interval).then(pollRecursive)
         })
     }
-
     return pollRecursive()
       .timeout(timeout)
   }
@@ -84,5 +84,83 @@ module.exports = class TestUtil {
       TestUtil.deleteAllExchanges(),
       TestUtil.deleteAllQueues()
     )
+  }
+
+  static createCustomerAndSubscription (org, opts) {
+    if (!opts) opts = {}
+    return stripe.stripeClient.customers.create({
+      description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`
+    })
+    .then(stripeCustomer => {
+      org.stripeCustomerId = stripeCustomer.id
+      const updates = {
+        customer: org.stripeCustomerId,
+        plan: 'runnable-starter'
+      }
+      if (opts.trialEnd) {
+        updates.trial_end = opts.trialEnd
+      }
+      return stripe.stripeClient.subscriptions.create(updates)
+      .then(stripeSubscription => {
+        org.stripeSubscriptionId = stripeSubscription.id
+        return Promise.props({
+          customer: stripeCustomer,
+          subscription: stripeSubscription
+        })
+      })
+    })
+  }
+
+  static createCustomerAndSubscriptionWithPaymentMethod (org, opts) {
+    if (!opts) opts = {}
+    let randomDigit = () => Math.floor(Math.random() * 10) + ''
+    let securityCode = randomDigit() + randomDigit() + randomDigit()
+    if (!opts.paymentMethodOwner) {
+      opts.paymentMethodOwner = {
+        id: 1, githubId: 1981198
+      }
+    }
+    return stripe.stripeClient.tokens.create({ // Create token. Customer needs token to pay
+      card: {
+        number: '4242424242424242',
+        exp_month: 12,
+        exp_year: 2017,
+        cvc: securityCode
+      }
+    })
+    .then(stripeToken => {
+      return stripe.stripeClient.customers.create({
+        description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`,
+        source: stripeToken.id,
+        coupon: opts.coupon,
+        metadata: {
+          paymentMethodOwnerId: opts.paymentMethodOwner.id,
+          paymentMethodOwnerGithubId: opts.paymentMethodOwner.githubId
+        }
+      })
+      .then(stripeCustomer => [stripeCustomer, stripeToken])
+    })
+    .spread((stripeCustomer, stripeToken) => {
+      org.stripeCustomerId = stripeCustomer.id
+      return stripe.stripeClient.subscriptions.create({
+        customer: org.stripeCustomerId,
+        plan: opts.plan || 'runnable-starter',
+        trial_end: opts.trialEnd || 'now',
+        metadata: {
+          users: JSON.stringify(opts.users || [])
+        }
+      })
+      .then(stripeSubscription => {
+        return Promise.props({
+          customer: stripeCustomer,
+          subscription: stripeSubscription,
+          token: stripeToken
+        })
+      })
+    })
+  }
+
+  static throwIfSuccess () {
+    throw new Error('Should not be called')
   }
 }

@@ -1,6 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
+const Joi = require('util/joi')
 const expect = require('chai').expect
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
@@ -12,18 +13,21 @@ const moment = require('moment')
 const EntityExistsInStripeError = require('errors/entity-exists-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial')
+const CreateOrganizationInStripeAndStartTrial = require('workers/organization.plan.start-trial').task
+const CreateOrganizationInStripeAndStartTrialSchema = require('workers/organization.plan.start-trial').jobSchema
 
 describe('#organization.plan.start-trial', () => {
   let validJob
   let tid = '6ab33f93-118a-4a03-bee4-89ddebeab346'
-  let organizationId = 67898
+  const organizationId = 67898
   let getOrganizationStub
   let updateOrganizationStub
   let createCustomerStub
   let org
-  let stripeCustomerId = 'cus_23423432'
-  let trialEnd = 1471135084
+  const stripeCustomerId = 'cus_23423432'
+  const stripeSubscriptionId = 'sub_23428020'
+  let trialEnd = moment(1471135084, 'X')
+  let trialEndWithPadding = trialEnd.clone().add(6, 'hours')
 
   beforeEach(() => {
     validJob = { organization: { id: organizationId } }
@@ -38,7 +42,8 @@ describe('#organization.plan.start-trial', () => {
         id: stripeCustomerId
       },
       subscription: {
-        trial_end: trialEnd
+        id: stripeSubscriptionId,
+        trial_end: trialEnd.format('X')
       }
     })
   })
@@ -50,30 +55,17 @@ describe('#organization.plan.start-trial', () => {
   })
 
   describe('Validation', () => {
-    it('should not validate if `tid` is not a uuid', done => {
-      CreateOrganizationInStripeAndStartTrial({ tid: 'world' })
-        .asCallback(err => {
-          expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
-          expect(err.message).to.match(/tid/i)
-          done()
-        })
-    })
-
     it('should not validate if `organization.id` is not passed', done => {
-      CreateOrganizationInStripeAndStartTrial({ tid: tid })
+      Joi.validateAsync({ tid: tid }, CreateOrganizationInStripeAndStartTrialSchema)
         .asCallback(err => {
           expect(err).to.exist
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.match(/invalid.*job/i)
           expect(err.message).to.match(/organization/i)
           done()
         })
     })
 
     it('should validate if a valid job is passed', () => {
-      return CreateOrganizationInStripeAndStartTrial(validJob)
+      return CreateOrganizationInStripeAndStartTrial(validJob, CreateOrganizationInStripeAndStartTrialSchema)
     })
   })
 
@@ -160,7 +152,8 @@ describe('#organization.plan.start-trial', () => {
             organizationId,
             {
               stripeCustomerId: stripeCustomerId,
-              trialEnd: moment(trialEnd, 'X').toISOString()
+              stripeSubscriptionId: stripeSubscriptionId,
+              trialEnd: trialEndWithPadding.toISOString()
             }
           )
         })

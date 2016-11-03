@@ -4,7 +4,6 @@ require('loadenv')()
 const Promise = require('bluebird')
 const expect = require('chai').expect
 const sinon = require('sinon')
-const moment = require('moment')
 
 const MockAPI = require('mehpi')
 const bigPoppaAPI = new MockAPI('5678')
@@ -30,6 +29,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   let orgGithubId = OrganizationFixture.githubId
   let userGithubId = 1981198
   let stripeCustomerId
+  let stripeSubscriptionId
   let publisher
 
   let updateOrganizationSpy
@@ -136,6 +136,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
       .delay(1000)
       .then(function checkStripe () {
         stripeCustomerId = updateOrganizationSpy.firstCall.args[1].stripeCustomerId
+        stripeSubscriptionId = updateOrganizationSpy.firstCall.args[1].stripeSubscriptionId
         return stripe.stripeClient.customers.retrieve(stripeCustomerId)
           .then(stripeCustomer => {
             expect(stripeCustomer.description).to.include(OrganizationFixture.id)
@@ -143,23 +144,11 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
             let metadata = stripeCustomer.metadata
             expect(metadata).to.have.property('organizationId', OrganizationFixture.id.toString())
             expect(metadata).to.have.property('githubId', OrganizationFixture.githubId.toString())
-
-            // Testing BETA discounts (Remove this after September 21)
-            if (moment().isBefore(moment('2016-09-21T07:00:00.000Z'))) {
-              expect(stripeCustomer).to.have.property('discount')
-              expect(stripeCustomer).to.have.deep.property('discount.coupon.id', 'Beta')
-            } else {
-              expect(stripeCustomer).to.not.have.property('discount')
-            }
           })
           .then(function fetchSubscriptions () {
-            return stripe.stripeClient.subscriptions.list({ customer: stripeCustomerId })
+            return stripe.stripeClient.subscriptions.retrieve(stripeSubscriptionId)
           })
-          .then(function checkSubscription (res) {
-            let subscriptions = res.data
-            expect(subscriptions).to.be.an('array')
-            expect(subscriptions).to.have.lengthOf(1)
-            let subscription = subscriptions[0]
+          .then(function checkSubscription (subscription) {
             expect(subscription).to.be.an('object')
             expect(subscription.trial_end).to.be.above((new Date()).getTime() / 1000)
             expect(subscription.plan.id).to.be.a.match(/runnable/i)
@@ -192,6 +181,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
       .then(function assertProperties (orgs) {
         let org = orgs[0]
         expect(org).to.have.property('stripeCustomerId')
+        expect(org).to.have.property('stripeSubscriptionId')
         expect(org).to.have.property('allowed', true)
         expect(org).to.have.property('isPastTrial', false)
         expect(org).to.have.property('isPastActivePeriod', true)
