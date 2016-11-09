@@ -28,7 +28,7 @@
     "test": "test"
   },
   "engines": {
-    "node": ">=4.4.5 <5",
+    "node": ">=6.9.0 <7",
     "npm": ">=2.14.7"
   },
   "standard": {
