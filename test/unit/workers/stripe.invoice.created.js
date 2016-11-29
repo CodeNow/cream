@@ -151,7 +151,7 @@ describe('#stripe.invoice.created', () => {
         })
     })
 
-    it('should pay the invoice if not already paid', () => {
+    it('should not pay the invoice if already paid', () => {
       stripeEvent.data.object.paid = true
       return ProcessInvoiceCreated(validJob)
         .then(() => {
@@ -159,7 +159,7 @@ describe('#stripe.invoice.created', () => {
         })
     })
 
-    it('should not pay the invoice if already paid', () => {
+    it('should pay the invoice if the it has not already been paid', () => {
       return ProcessInvoiceCreated(validJob)
         .then(() => {
           sinon.assert.calledOnce(payInvoiceStub)
