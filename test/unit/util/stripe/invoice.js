@@ -343,4 +343,40 @@ describe('StripeInvoiceUtils', function () {
         })
     })
   })
+
+  describe('#pay', () => {
+    let payInvoiceStub
+    const invoiceId = 'in_18i5aXLYrJgOrBWzYNR9xq87'
+
+    beforeEach('Stub out method', () => {
+      payInvoiceStub = sinon.stub(stripeClient.invoices, 'pay').resolves()
+    })
+
+    afterEach('Restore stub', () => {
+      payInvoiceStub.restore()
+    })
+
+    it('should update the invoice with the corrrect metadata', () => {
+      StripeInvoiceUtils.pay(invoiceId)
+        .then(() => {
+          sinon.assert.calledOnce(payInvoiceStub)
+          sinon.assert.calledWithExactly(
+            payInvoiceStub,
+            invoiceId
+          )
+        })
+    })
+
+    it('should throw any errors thrown by the client', done => {
+      let thrownErr = new Error()
+      payInvoiceStub.rejects(thrownErr)
+
+      StripeInvoiceUtils.pay(invoiceId)
+        .asCallback(err => {
+          expect(err).to.exist
+          expect(err).to.equal(thrownErr)
+          done()
+        })
+    })
+  })
 })

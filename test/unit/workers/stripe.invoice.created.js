@@ -24,6 +24,7 @@ describe('#stripe.invoice.created', () => {
   let updatePlanIdForOrganizationBasedOnCurrentUsageStub
   let updateInvoiceWithPaymentMethodOwnerStub
   let getEventStub
+  let payInvoiceStub
   let org = OrganizationsFixture[0]
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
   let invoiceId = 'in_18hkxrLYrJgOrBWzgthSRr9M'
@@ -51,12 +52,14 @@ describe('#stripe.invoice.created', () => {
     updateInvoiceWithPaymentMethodOwnerStub = sinon.stub(stripe.invoices, 'updateWithPaymentMethodOwner').resolves()
     updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe.subscriptions, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
+    payInvoiceStub = sinon.stub(stripe.invoices, 'pay').resolves()
   })
   afterEach(() => {
     getOrganizationsStub.restore()
     updatePlanIdForOrganizationBasedOnCurrentUsageStub.restore()
     updateInvoiceWithPaymentMethodOwnerStub.restore()
     getEventStub.restore()
+    payInvoiceStub.restore()
   })
 
   describe('Validation', () => {
@@ -142,6 +145,17 @@ describe('#stripe.invoice.created', () => {
           sinon.assert.calledWithExactly(
             updateInvoiceWithPaymentMethodOwnerStub,
             org,
+            invoiceId
+          )
+        })
+    })
+
+    it('should pay the invoice', () => {
+      return ProcessInvoiceCreated(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(payInvoiceStub)
+          sinon.assert.calledWithExactly(
+            payInvoiceStub,
             invoiceId
           )
         })
