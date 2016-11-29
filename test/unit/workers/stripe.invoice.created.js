@@ -41,7 +41,8 @@ describe('#stripe.invoice.created', () => {
           object: 'invoice',
           id: invoiceId,
           customer: stripeCustomerId,
-          period_end: 1471036920
+          period_end: 1471036920,
+          paid: false
         }
       }
     }
@@ -150,7 +151,15 @@ describe('#stripe.invoice.created', () => {
         })
     })
 
-    it('should pay the invoice', () => {
+    it('should pay the invoice if not already paid', () => {
+      stripeEvent.data.object.paid = true
+      return ProcessInvoiceCreated(validJob)
+        .then(() => {
+          sinon.assert.notCalled(payInvoiceStub)
+        })
+    })
+
+    it('should not pay the invoice if already paid', () => {
       return ProcessInvoiceCreated(validJob)
         .then(() => {
           sinon.assert.calledOnce(payInvoiceStub)
