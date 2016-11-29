@@ -168,7 +168,7 @@ describe('#stripe.invoice.created Integration Test', () => {
       })
   })
 
-  it('should update the then invoice with the payment method owner', function () {
+  it('should update the invoice with the payment method owner and mark it as paid', function () {
     this.timeout(5000)
     const checkInvoiceUpdated = Promise.method(() => {
       return !!updateInvoiceWithPaymentMethodOwnerSpy.called
@@ -178,9 +178,10 @@ describe('#stripe.invoice.created Integration Test', () => {
       .then(function fetchInvoice () {
         return stripeClient.invoices.retrieve(stripeInvoiceId)
       })
-      .then(function checkInvoiceWasUpdated (invoice) {
+      .then(function checkInvoiceWasUpdatedAndPaid (invoice) {
         expect(invoice).to.have.deep.property('metadata.paymentMethodOwnerId', userId.toString())
         expect(invoice).to.have.deep.property('metadata.paymentMethodOwnerGithubId', userGithubId.toString())
+        expect(invoice).to.have.property('paid', true)
       })
   })
 })
