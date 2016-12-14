@@ -32,6 +32,5 @@ There are three types of tests in this project:
 
 ## Future Changes
 
-1. Switch to Docker 1.12
-1. Strip out `jobIntervals` into its own container/or use khronos time.passed
-1. Change source of truth for data to be an internal database (away from Stripe)
+1. Use khronos time.passed: https://github.com/CodeNow/cream/issues/55
+1. Change source of truth for data to be an internal database (away from Stripe): https://github.com/CodeNow/cream/issues/56
