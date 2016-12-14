@@ -18,6 +18,7 @@ describe('OrganizationService', () => {
     let getOrganizationsStub
     let getSubscriptionForOrganizationStub
     const endTime = moment().toISOString()
+    const startTime = moment().subtract(1, 'days').toISOString()
     let org1 = {
       trialEnd: moment().subtract(7, 'days'),
       stripeCustomerId: 'cus_234234',
@@ -39,7 +40,7 @@ describe('OrganizationService', () => {
     })
 
     it('should get the organizations', () => {
-      return OrganizationService.getFilteredOrgsInTrialByTrialEndTime(endTime)
+      return OrganizationService.getFilteredOrgsInTrialByTrialEndTime(startTime, endTime)
       .then(() => {
         sinon.assert.calledOnce(getOrganizationsStub)
         sinon.assert.calledWithExactly(
@@ -47,7 +48,7 @@ describe('OrganizationService', () => {
           {
             hasPaymentMethod: false,
             stripeCustomerId: { isNull: false },
-            trialEnd: { lessThan: endTime }
+            trialEnd: { moreThan: startTime, lessThan: endTime }
           }
         )
       })

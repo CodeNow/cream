@@ -95,8 +95,14 @@ describe('#organization.trial.ended.check', () => {
         sinon.assert.calledOnce(getFilteredOrgsInTrialByTrialEndTimeStub)
         sinon.assert.calledWithExactly(
           getFilteredOrgsInTrialByTrialEndTimeStub,
+          sinon.match.string,
           sinon.match.string
         )
+        let firstArgument = moment(getFilteredOrgsInTrialByTrialEndTimeStub.firstCall.args[0])
+        let secondArgument = moment(getFilteredOrgsInTrialByTrialEndTimeStub.firstCall.args[1])
+        expect(firstArgument.isValid()).to.equal(true)
+        expect(secondArgument.isValid()).to.equal(true)
+        expect(firstArgument.isBefore(secondArgument)).to.equal(true)
       })
     })
 
