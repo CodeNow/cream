@@ -40,6 +40,7 @@ describe('#stripe.invoice.created', () => {
         object: {
           object: 'invoice',
           id: invoiceId,
+          closed: false,
           customer: stripeCustomerId,
           period_end: 1471036920,
           paid: false
