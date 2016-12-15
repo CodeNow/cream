@@ -624,4 +624,74 @@ describe('Stripe', function () {
         })
     })
   })
+
+  describe('#createNewSubscriptionForCustomerWithPaymentMethod', () => {
+    let orgMock
+    let users
+    let getPlanIdForOrganizationBasedOnCurrentUsageStub
+    let createSubscriptionStub
+    let subscription = {}
+    const plan = 'runnable-starter'
+
+    beforeEach('Create mock for org', () => {
+      users = []
+      orgMock = {
+        id: orgId,
+        githubId,
+        stripeCustomerId,
+        users
+      }
+    })
+    beforeEach('Stub out methods', () => {
+      getPlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(StripeSubscriptionUtils, 'getPlanIdForOrganizationBasedOnCurrentUsage').resolves(plan)
+      createSubscriptionStub = sinon.stub(StripeSubscriptionUtils, 'createSubscription').resolves(subscription)
+    })
+    afterEach('Restore stubs', () => {
+      getPlanIdForOrganizationBasedOnCurrentUsageStub.restore()
+      createSubscriptionStub.restore()
+    })
+
+    it('should get the plan id', () => {
+      return Stripe.createNewSubscriptionForCustomerWithPaymentMethod(orgMock)
+      .then(() => {
+        sinon.assert.calledOnce(getPlanIdForOrganizationBasedOnCurrentUsageStub)
+        sinon.assert.calledWith(
+          getPlanIdForOrganizationBasedOnCurrentUsageStub,
+          githubId
+        )
+      })
+    })
+
+    it('should create the subscription', () => {
+      return Stripe.createNewSubscriptionForCustomerWithPaymentMethod(orgMock)
+      .then(() => {
+        sinon.assert.calledOnce(createSubscriptionStub)
+        sinon.assert.calledWith(
+          createSubscriptionStub,
+          stripeCustomerId,
+          users,
+          plan,
+          true
+        )
+      })
+    })
+
+    it('should return the new subscription', () => {
+      return Stripe.createNewSubscriptionForCustomerWithPaymentMethod(orgMock)
+      .then(newSubscription => {
+        expect(newSubscription).to.equal(subscription)
+      })
+    })
+
+    it('should throw any errors', () => {
+      let thrownErr = new Error('yo')
+      createSubscriptionStub.rejects(thrownErr)
+
+      return Stripe.createNewSubscriptionForCustomerWithPaymentMethod(orgMock)
+      .then(testUtil.throwIfSuccess)
+      .catch(err => {
+        expect(err).to.equal(thrownErr)
+      })
+    })
+  })
 })

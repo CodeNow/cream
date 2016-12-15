@@ -64,6 +64,24 @@ describe('StripeSubscriptionUtils', function () {
         })
     })
 
+    it('should create a subscription with no trial if `noTrial` is passed', () => {
+      return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId, true)
+        .then(res => {
+          expect(res).to.equal(subscription)
+          sinon.assert.calledOnce(createSubscriptionStub)
+          sinon.assert.calledWithExactly(
+            createSubscriptionStub,
+            {
+              customer: stripeCustomerId,
+              plan: planId,
+              trial_end: 'now',
+              quantity: sinon.match.number,
+              metadata: sinon.match.object
+            }
+          )
+        })
+    })
+
     it('should call `_getUpdateObjectForUsers`', () => {
       return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId)
         .then(res => {
