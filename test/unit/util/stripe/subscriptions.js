@@ -65,7 +65,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should create a subscription with no trial if `noTrial` is passed', () => {
-      return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId, true)
+      return StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId, { noTrial: true })
         .then(res => {
           expect(res).to.equal(subscription)
           sinon.assert.calledOnce(createSubscriptionStub)

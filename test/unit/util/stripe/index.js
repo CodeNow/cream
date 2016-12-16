@@ -671,7 +671,7 @@ describe('Stripe', function () {
           stripeCustomerId,
           users,
           plan,
-          true
+          { noTrial: true }
         )
       })
     })
