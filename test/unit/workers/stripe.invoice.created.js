@@ -7,6 +7,7 @@ const testUtil = require('../../util')
 require('sinon-as-promised')(Promise)
 const expect = require('chai').expect
 
+const rabbitmq = require('util/rabbitmq')
 const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
 
@@ -30,6 +31,7 @@ describe('#stripe.invoice.created', () => {
   let invoiceId = 'in_18hkxrLYrJgOrBWzgthSRr9M'
   let stripeCustomerId = org.stripeCustomerId
   let stripeEvent
+  let publishTaskStub
 
   beforeEach(() => {
     validJob = { stripeEventId: eventId }
@@ -55,6 +57,7 @@ describe('#stripe.invoice.created', () => {
     updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe.subscriptions, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
     payInvoiceStub = sinon.stub(stripe.invoices, 'pay').resolves()
+    publishTaskStub = sinon.stub(rabbitmq, 'publishTask')
   })
   afterEach(() => {
     getOrganizationsStub.restore()
@@ -62,6 +65,7 @@ describe('#stripe.invoice.created', () => {
     updateInvoiceWithPaymentMethodOwnerStub.restore()
     getEventStub.restore()
     payInvoiceStub.restore()
+    publishTaskStub.restore()
   })
 
   describe('Validation', () => {
@@ -152,23 +156,47 @@ describe('#stripe.invoice.created', () => {
         })
     })
 
-    it('should not pay the invoice if already paid', () => {
-      stripeEvent.data.object.paid = true
-      return ProcessInvoiceCreated(validJob)
-        .then(() => {
-          sinon.assert.notCalled(payInvoiceStub)
-        })
+    describe('Paying Invoices', () => {
+      it('should not pay the invoice if already paid', () => {
+        stripeEvent.data.object.paid = true
+        return ProcessInvoiceCreated(validJob)
+          .then(() => {
+            sinon.assert.notCalled(payInvoiceStub)
+          })
+      })
+
+      it('should pay the invoice if not paid', () => {
+        return ProcessInvoiceCreated(validJob)
+          .then(() => {
+            sinon.assert.calledOnce(payInvoiceStub)
+            sinon.assert.calledWith(payInvoiceStub, invoiceId)
+          })
+      })
     })
 
-    it('should pay the invoice if the it has not already been paid', () => {
-      return ProcessInvoiceCreated(validJob)
-        .then(() => {
-          sinon.assert.calledOnce(payInvoiceStub)
-          sinon.assert.calledWithExactly(
-            payInvoiceStub,
-            invoiceId
-          )
-        })
+    describe('New Subscription', () => {
+      it('should create a new subscription if all the conditions for it are met', () => {
+        stripeEvent.data.object.closed = true
+        org.isInGracePeriod = true
+        org.hasPaymentMethod = true
+        return ProcessInvoiceCreated(validJob)
+          .then(() => {
+            sinon.assert.calledOnce(publishTaskStub)
+            sinon.assert.calledWithExactly(
+              publishTaskStub,
+              'organization.subscription.create',
+              { organization: { id: org.id } }
+            )
+          })
+      })
+
+      it('should not create a new subscription if not conditions are met', () => {
+        org.isInGracePeriod = false
+        return ProcessInvoiceCreated(validJob)
+          .then(() => {
+            sinon.assert.notCalled(publishTaskStub)
+          })
+      })
     })
   })
 })
