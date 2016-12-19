@@ -115,16 +115,21 @@ module.exports = class TestUtil {
     if (!opts) opts = {}
     let randomDigit = () => Math.floor(Math.random() * 10) + ''
     let securityCode = randomDigit() + randomDigit() + randomDigit()
+    let creditCardNumber = '4242424242424242'
     if (!opts.paymentMethodOwner) {
       opts.paymentMethodOwner = {
         id: 1, githubId: 1981198
       }
     }
+    if (opts.useFailingCard) {
+      creditCardNumber = '4000000000000341' // Attaching this card to a Customer object will succeed, but attempts to charge the customer will fail.
+    }
+
     return stripe.stripeClient.tokens.create({ // Create token. Customer needs token to pay
       card: {
-        number: '4242424242424242',
+        number: creditCardNumber,
         exp_month: 12,
-        exp_year: 2017,
+        exp_year: 2020,
         cvc: securityCode
       }
     })
