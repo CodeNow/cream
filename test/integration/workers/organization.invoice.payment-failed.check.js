@@ -154,7 +154,6 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
     publisher.publishTask('organizations.invoice.payment-failed.check', {})
 
     const checkCustomerCreated = Promise.method(() => {
-      console.log(!!updateNotifiedAllMembersPaymentFailedStub.called)
       // Check if spy has been called
       return !!updateNotifiedAllMembersPaymentFailedStub.called
     })
