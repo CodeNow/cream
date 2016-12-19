@@ -25,7 +25,16 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe('#organiztion.payment-method.added Integration Test', () => {
+xdescribe('#organiztion.payment-method.added Integration Test', () => {
+  /**
+   * This tests takes from 30 seconds to 4 minutes to successfully run, since Stripe
+   * takes some time to create an invoice for a customer who's trial has
+   * ended. This is the only way to create an unpaid + closed invoice.
+   *
+   * For that reason, this tests won't be run as a normal part of the test flow.
+   */
+  if (!process.env.RUN_SLOW_TESTS) this.pending = true
+
   const org = Object.assign({}, OrganizationFixture)
   const orgId = OrganizationFixture.id
   let stripeCustomerId
@@ -100,7 +109,7 @@ describe('#organiztion.payment-method.added Integration Test', () => {
     })
     return testUtil.poll(findInvoice, 5000, 1000 * 60 * 4000)
       .then(function payInvoice () {
-        return stripeClient.invoices.update(stripeInvoice.id, { close: true })
+        return stripeClient.invoices.update(stripeInvoice.id, { closed: true })
       })
       .catch(err => {
         // Card should be declined (That's what we're testing)
@@ -133,23 +142,30 @@ describe('#organiztion.payment-method.added Integration Test', () => {
   /**
    * Tests are meant to be run sequentially. Might not work with `.only`
    */
-  it('should trigger organization subscription create', function () {
+  it('should publish the event to trigger the worker', function () {
     rabbitmq.publishEvent('organization.payment-method.added', {
       organization: {
-        id: orgId
+        id: orgId,
+        name: org.name
+      },
+      paymentMethodOwner: {
+        githubId: 1981198,
+        email: 'jorge@runnable.com'
       }
     })
   })
 
-  xit('should have update the organization', function (done) {
+  it('should publish the event', function (done) {
     this.timeout(5000)
     const checkCustomerCreated = Promise.method(() => publishTaskStub.called)
     return testUtil.poll(checkCustomerCreated, 100, 5000)
       .delay(1000)
       .then(function checkStub () {
-        expect(publishTaskStub.firstCall.args[0], {
+        expect(publishTaskStub.firstCall.args[0], 'organization.subscription.create')
+        expect(publishTaskStub.firstCall.args[1], {
           organization: {
-            id: org.id
+            id: org.id,
+            name: org.name
           }
         })
       })

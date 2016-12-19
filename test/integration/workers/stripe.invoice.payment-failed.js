@@ -25,7 +25,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe.only('#stripe.invoice.payment-failed Integration Test', function () {
+describe('#stripe.invoice.payment-failed Integration Test', function () {
   /**
    * This tests takes about 4 minutes to successfully run, since Stripe
    * takes some minutes to create an invoice for a customer who's trial has

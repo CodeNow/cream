@@ -4,6 +4,7 @@ require('loadenv')()
 const Promise = require('bluebird')
 const expect = require('chai').expect
 const moment = require('moment')
+const sinon = require('sinon')
 
 const stripeClient = require('util/stripe').stripeClient
 
@@ -44,8 +45,14 @@ describe('OrganizationRouter Integration Test', () => {
   after('Logout into runnable API', () => runnableAPI.logout())
 
   // RabbitMQ Client
-  before('Connect to RabbitMQ', () => rabbitmq.connect())
-  after('Disconnect from RabbitMQ', () => rabbitmq.disconnect())
+  before('Connect to RabbitMQ', () => {
+    sinon.stub(rabbitmq, 'publishEvent')
+    return rabbitmq.connect()
+  })
+  after('Disconnect from RabbitMQ', () => {
+    rabbitmq.publishEvent.restore()
+    return rabbitmq.disconnect()
+  })
 
   // RabbitMQ
   before('Connect to RabbitMQ', () => {

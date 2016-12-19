@@ -149,14 +149,16 @@ describe('#organizations.invoice.payment-failed.check Integration Test', () => {
   })
 
   it('should publish the `organiztion.invoice.payment-failed.check` event', function () {
-    this.timeout(5000)
+    let timeoutLimit = 10000
+    this.timeout(timeoutLimit)
     publisher.publishTask('organizations.invoice.payment-failed.check', {})
 
     const checkCustomerCreated = Promise.method(() => {
+      console.log(!!updateNotifiedAllMembersPaymentFailedStub.called)
       // Check if spy has been called
       return !!updateNotifiedAllMembersPaymentFailedStub.called
     })
-    return testUtil.poll(checkCustomerCreated, 100, 5000)
+    return testUtil.poll(checkCustomerCreated, 100, timeoutLimit)
       .delay(1000)
       .then(function checkStripeForUpdatePlan () {
         // Assert the event was published
