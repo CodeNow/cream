@@ -24,7 +24,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-xdescribe('#organiztion.subscription.create Integration Test', () => {
+describe('#organiztion.subscription.create Integration Test', () => {
   const org = Object.assign({}, OrganizationFixture)
   const orgId = OrganizationFixture.id
   let stripeCustomerId
@@ -57,6 +57,7 @@ xdescribe('#organiztion.subscription.create Integration Test', () => {
   })
   after('Disconnect from RabbitMQ', () => {
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   before('Spy on updateOrganization', () => {
@@ -111,7 +112,7 @@ xdescribe('#organiztion.subscription.create Integration Test', () => {
    * Tests are meant to be run sequentially. Might not work with `.only`
    */
   it('should trigger organization subscription create', function () {
-    rabbitmq.publishTask('organization.subscription.create', {
+    publisher.publishTask('organization.subscription.create', {
       organization: {
         id: orgId
       }

@@ -25,7 +25,7 @@ const testUtil = require('../../util')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-xdescribe('#organiztion.payment-method.added Integration Test', () => {
+describe('#organiztion.payment-method.added Integration Test', function () {
   /**
    * This tests takes from 30 seconds to 4 minutes to successfully run, since Stripe
    * takes some time to create an invoice for a customer who's trial has
@@ -67,6 +67,7 @@ xdescribe('#organiztion.payment-method.added Integration Test', () => {
   })
   after('Disconnect from RabbitMQ', () => {
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   before('Stub publishTask', () => {
@@ -155,7 +156,7 @@ xdescribe('#organiztion.payment-method.added Integration Test', () => {
     })
   })
 
-  it('should publish the event', function (done) {
+  it('should publish the create subscription event', function (done) {
     this.timeout(5000)
     const checkCustomerCreated = Promise.method(() => publishTaskStub.called)
     return testUtil.poll(checkCustomerCreated, 100, 5000)
