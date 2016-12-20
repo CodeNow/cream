@@ -53,6 +53,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   })
   after('Disconnect from RabbitMQ', () => {
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   before('Spy on updateOrganization', () => {
