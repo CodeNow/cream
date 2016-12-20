@@ -84,12 +84,15 @@ describe('StripeInvoiceUtils', function () {
     let listStub
     let invoices
     const stripeCustomerId = 'cus_234923423'
+    const stripeSubscriptionId = 'sub_239weo8rw'
+    const org = { stripeCustomerId, stripeSubscriptionId }
     const invoice1Id = 'in_18wyJsLYrJgOrBWzHMTPxdMp'
     const invoice2Id = 'in_18x01xLYrJgOrBWziipjwfM4'
 
     beforeEach(() => {
       invoices = [{
         id: invoice1Id,
+        subscription: stripeSubscriptionId,
         date: moment().subtract(1, 'hours')
       }]
       listStub = sinon.stub(stripeClient.invoices, 'list').resolves({ data: invoices })
@@ -99,7 +102,7 @@ describe('StripeInvoiceUtils', function () {
     })
 
     it('should call `invoices.list`', () => {
-      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+      return StripeInvoiceUtils.getCurrentInvoice(org)
         .then(() => {
           sinon.assert.calledOnce(listStub)
           sinon.assert.calledWithExactly(listStub, { customer: stripeCustomerId })
@@ -107,7 +110,7 @@ describe('StripeInvoiceUtils', function () {
     })
 
     it('should return an invoice', () => {
-      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+      return StripeInvoiceUtils.getCurrentInvoice(org)
         .then(invoice => {
           expect(invoice).to.be.an('object')
           expect(invoice).to.have.property('id', invoice1Id)
@@ -117,14 +120,36 @@ describe('StripeInvoiceUtils', function () {
     it('should return the latest invoice', () => {
       invoices = [{
         id: invoice1Id,
+        subscription: stripeSubscriptionId,
         date: moment().subtract(1, 'days')
       }, {
         id: invoice2Id,
+        subscription: stripeSubscriptionId,
         date: moment().subtract(1, 'hours')
       }]
       listStub.resolves({ data: invoices })
 
-      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+      return StripeInvoiceUtils.getCurrentInvoice(org)
+        .then(invoice => {
+          expect(invoice).to.be.an('object')
+          expect(invoice).to.have.property('id', invoice2Id)
+        })
+    })
+
+    it('should only return invoices with the same subscription', () => {
+      let now = moment()
+      invoices = [{
+        id: invoice1Id,
+        subscription: 'different-sub',
+        date: now
+      }, {
+        id: invoice2Id,
+        subscription: stripeSubscriptionId,
+        date: now
+      }]
+      listStub.resolves({ data: invoices })
+
+      return StripeInvoiceUtils.getCurrentInvoice(org)
         .then(invoice => {
           expect(invoice).to.be.an('object')
           expect(invoice).to.have.property('id', invoice2Id)
@@ -134,7 +159,7 @@ describe('StripeInvoiceUtils', function () {
     it('should throw a `EntityNotFoundError` if the invoices is not an array', () => {
       listStub.resolves({ data: null })
 
-      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+      return StripeInvoiceUtils.getCurrentInvoice(org)
         .then(testUtil.throwIfSuccess)
         .catch(err => {
           expect(err).to.exist
@@ -145,7 +170,7 @@ describe('StripeInvoiceUtils', function () {
     it('should throw a `EntityNotFoundError` if no invoices are found', () => {
       listStub.resolves({ data: [] })
 
-      return StripeInvoiceUtils.getCurrentInvoice(stripeCustomerId)
+      return StripeInvoiceUtils.getCurrentInvoice(org)
         .then(testUtil.throwIfSuccess)
         .catch(err => {
           expect(err).to.exist
