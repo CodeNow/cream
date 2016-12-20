@@ -35,7 +35,6 @@ describe('#organization.payment-method.added', () => {
     }
     invoice = {
       id: 'in_asdfafasdf',
-      closed: true,
       paid: false
     }
     getOrganizationStub = sinon.stub(bigPoppa, 'getOrganization').resolves(org)
@@ -100,14 +99,6 @@ describe('#organization.payment-method.added', () => {
               }
             }
           )
-        })
-    })
-
-    it('should not publish the task if the invoice is not closed', () => {
-      invoice.closed = false
-      return PayInvoice(validJob)
-        .then(() => {
-          sinon.assert.notCalled(publishTaskStub)
         })
     })
 

@@ -91,7 +91,7 @@ describe('#organiztion.payment-method.added Integration Test', function () {
     })
   })
 
-  before('Close unpaid invoice', function () {
+  before('Assert invoice', function () {
     /**
      * It takes about two minutes for Stripe to create an invoice for
      * an expired account
@@ -109,9 +109,6 @@ describe('#organiztion.payment-method.added Integration Test', function () {
         })
     })
     return testUtil.poll(findInvoice, 5000, 1000 * 60 * 4000)
-      .then(function payInvoice () {
-        return stripeClient.invoices.update(stripeInvoice.id, { closed: true })
-      })
       .catch(err => {
         // Card should be declined (That's what we're testing)
         if (!err.message.match(/your.*card.*was.*declined/i)) {
