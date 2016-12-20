@@ -38,10 +38,8 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
   let publisher
   let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture, { hasPaymentMethod: true })
   let orgId = org.id
-  let orgGithubId = org.githubId
   let stripeCustomerId
   let stripeSubscriptionId
-  let stripeTokenId
   let stripeEvent
   let stripeInvoice
   let updateNotifiedAdminPaymentFailedSpy
@@ -74,40 +72,18 @@ describe('#stripe.invoice.payment-failed Integration Test', function () {
 
   before('Create customer, subscription, invoice and get event', function () {
     this.timeout(5000)
-    return stripeClient.tokens.create({ // Create token. Customer needs token to pay
-      card: {
-        number: '4000000000000341', // Attaching this card to a Customer object will succeed, but attempts to charge the customer will fail.
-        exp_month: 10,
-        exp_year: 2017,
-        cvc: '123'
+    trialEnd = moment().add(2, 'seconds')
+    return testUtil.createCustomerAndSubscriptionWithPaymentMethod(org, {
+      trialEnd: trialEnd.format('X'),
+      useFailingCard: true,
+      paymentMethodOwner: {
+        id: paymentMethodOwnerId,
+        githubId: paymentMethodOwnerGithubId
       }
     })
-    .then(function createStripeTokenForPaymentMethod (stripeToken) {
-      // Create new customer with payment method
-      stripeTokenId = stripeToken.id
-      return stripeClient.customers.create({
-        description: `Customer for organizationId: ${orgId} / githubId: ${orgGithubId}`,
-        source: stripeTokenId,
-        metadata: {
-          paymentMethodOwnerId: paymentMethodOwnerId,
-          paymentMethodOwnerGithubId: paymentMethodOwnerGithubId
-        }
-      })
-    })
-    .then(function createSubscription (stripeCustomer) {
-      // Create new subscription and create charge right now
-      // This will automatically create an invoice
-      stripeCustomerId = stripeCustomer.id
-      // Warning: Request might fail if it takes more than 5 seconds
-      trialEnd = moment().add(2, 'seconds')
-      return stripeClient.subscriptions.create({
-        customer: stripeCustomerId,
-        plan: 'runnable-starter',
-        trial_end: trialEnd.format('X')
-      })
-      .then(subscription => {
-        stripeSubscriptionId = subscription.id
-      })
+    .then(res => {
+      stripeCustomerId = res.customer.id
+      stripeSubscriptionId = res.subscription.id
     })
   })
   after('Clean up Stripe', () => {

@@ -53,6 +53,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
   })
   after('Disconnect from RabbitMQ', () => {
     return testUtil.disconnectToRabbitMQ(publisher, workerServer)
+      .then(() => testUtil.deleteAllExchangesAndQueues())
   })
 
   before('Spy on updateOrganization', () => {
@@ -126,12 +127,7 @@ describe('#organiztion.plan.start-trial Integration Test', () => {
 
   it('should have created the customer in Stripe', function () {
     this.timeout(5000)
-    const checkCustomerCreated = Promise.method(() => {
-      if (updateOrganizationSpy.called) {
-        return true
-      }
-      return false
-    })
+    const checkCustomerCreated = Promise.method(() => updateOrganizationSpy.called)
     return testUtil.poll(checkCustomerCreated, 100, 5000)
       .delay(1000)
       .then(function checkStripe () {
