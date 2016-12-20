@@ -89,9 +89,9 @@ describe('#organizations.invoice.payment-failed.check', () => {
       .then(() => {
         sinon.assert.called(getCurrentInvoiceStub)
         expect(getCurrentInvoiceStub.callCount).to.equal(3)
-        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org1.stripeCustomerId)
-        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org2.stripeCustomerId)
-        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org3.stripeCustomerId)
+        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org1)
+        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org2)
+        sinon.assert.calledWithExactly(getCurrentInvoiceStub, org3)
       })
     })
 
@@ -136,7 +136,7 @@ describe('#organizations.invoice.payment-failed.check', () => {
 
     describe('Filtering', () => {
       it('should filter out orgs with no invoices', () => {
-        getCurrentInvoiceStub.withArgs(org1.stripeCustomerId).rejects(new Error())
+        getCurrentInvoiceStub.withArgs(org1).rejects(new Error())
 
         return CheckInvoicedPaymentFailed(validJob)
         .then(orgs => {
@@ -152,7 +152,7 @@ describe('#organizations.invoice.payment-failed.check', () => {
       describe('Invoices', () => {
         it('should filter out paid invoices', () => {
           let invoice2 = Object.assign({}, invoice, { paid: true })
-          getCurrentInvoiceStub.withArgs(org1.stripeCustomerId).resolves(invoice2)
+          getCurrentInvoiceStub.withArgs(org1).resolves(invoice2)
 
           return CheckInvoicedPaymentFailed(validJob)
           .then(orgs => {
@@ -165,7 +165,7 @@ describe('#organizations.invoice.payment-failed.check', () => {
 
         it('should filter out not attempted invoices', () => {
           let invoice2 = Object.assign({}, invoice, { attempted: false })
-          getCurrentInvoiceStub.withArgs(org1.stripeCustomerId).resolves(invoice2)
+          getCurrentInvoiceStub.withArgs(org1).resolves(invoice2)
 
           return CheckInvoicedPaymentFailed(validJob)
           .then(orgs => {
@@ -179,7 +179,7 @@ describe('#organizations.invoice.payment-failed.check', () => {
 
         it('should filter out orgs whos admins have not been notified', () => {
           let invoice2 = Object.assign({}, invoice, { metadata: { } })
-          getCurrentInvoiceStub.withArgs(org3.stripeCustomerId).resolves(invoice2)
+          getCurrentInvoiceStub.withArgs(org3).resolves(invoice2)
 
           return CheckInvoicedPaymentFailed(validJob)
           .then(orgs => {
@@ -194,7 +194,7 @@ describe('#organizations.invoice.payment-failed.check', () => {
         it('should filter out orgs that have already been notified', () => {
           let metadata = { notifiedAdminPaymentFailed: '2016-09-23T22:16:38+0000', notifiedAllMembersPaymentFailed: '2016-09-23T22:16:38+0000' }
           let invoice2 = Object.assign({}, invoice, { metadata })
-          getCurrentInvoiceStub.withArgs(org1.stripeCustomerId).resolves(invoice2)
+          getCurrentInvoiceStub.withArgs(org1).resolves(invoice2)
 
           return CheckInvoicedPaymentFailed(validJob)
           .then(orgs => {

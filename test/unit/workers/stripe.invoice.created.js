@@ -173,30 +173,5 @@ describe('#stripe.invoice.created', () => {
           })
       })
     })
-
-    describe('New Subscription', () => {
-      it('should create a new subscription if all the conditions for it are met', () => {
-        stripeEvent.data.object.closed = true
-        org.isInGracePeriod = true
-        org.hasPaymentMethod = true
-        return ProcessInvoiceCreated(validJob)
-          .then(() => {
-            sinon.assert.calledOnce(publishTaskStub)
-            sinon.assert.calledWithExactly(
-              publishTaskStub,
-              'organization.subscription.create',
-              { organization: { id: org.id } }
-            )
-          })
-      })
-
-      it('should not create a new subscription if not conditions are met', () => {
-        org.isInGracePeriod = false
-        return ProcessInvoiceCreated(validJob)
-          .then(() => {
-            sinon.assert.notCalled(publishTaskStub)
-          })
-      })
-    })
   })
 })
