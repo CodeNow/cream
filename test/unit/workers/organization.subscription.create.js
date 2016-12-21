@@ -15,7 +15,7 @@ const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
 const CreateNewSubscriptionForExistingOrganization = require('workers/organization.subscription.create').task
 const CreateNewSubscriptionSchema = require('workers/organization.subscription.create').jobSchema
 
-describe('#organization.subscription.create', () => {
+describe.only('#organization.subscription.create', () => {
   let validJob
   let getOrganizationStub
   let createNewSubscriptionForCustomerWithPaymentMethodStub
@@ -96,6 +96,23 @@ describe('#organization.subscription.create', () => {
               firstDockCreated: false
             }
           )
+        })
+    })
+
+    it('should publish two events', () => {
+      return CreateNewSubscriptionForExistingOrganization(validJob)
+        .then(() => {
+          sinon.assert.calledTwice(publishEventStub)
+          sinon.assert.calledWith(publishEventStub, 'organization.allowed', {
+            id: org.id,
+            githubId: org.githubId
+          })
+          sinon.assert.calledWith(publishEventStub, 'organization.subscription.created', {
+            organization: {
+              id: org.id
+            },
+            subscription: subscription
+          })
         })
     })
   })
