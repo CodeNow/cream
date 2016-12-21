@@ -92,8 +92,7 @@ describe('#organization.subscription.create', () => {
             org.id,
             {
               stripeSubscriptionId: subscription.id,
-              isActive: true,
-              firstDockCreated: false
+              isActive: true
             }
           )
         })
