@@ -91,9 +91,27 @@ describe('#organization.subscription.create', () => {
             updateOrganizationStub,
             org.id,
             {
-              stripeSubscriptionId: subscription.id
+              stripeSubscriptionId: subscription.id,
+              isActive: true
             }
           )
+        })
+    })
+
+    it('should publish two events', () => {
+      return CreateNewSubscriptionForExistingOrganization(validJob)
+        .then(() => {
+          sinon.assert.calledTwice(publishEventStub)
+          sinon.assert.calledWith(publishEventStub, 'organization.allowed', {
+            id: org.id,
+            githubId: org.githubId
+          })
+          sinon.assert.calledWith(publishEventStub, 'organization.subscription.created', {
+            organization: {
+              id: org.id
+            },
+            subscription: subscription
+          })
         })
     })
   })

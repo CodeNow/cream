@@ -52,7 +52,11 @@ describe('#organiztion.subscription.create Integration Test', () => {
 
   // RabbitMQ server
   before('Connect to RabbitMQ', () => {
-    return testUtil.connectToRabbitMQ(workerServer, [], [])
+    return testUtil.connectToRabbitMQ(
+      workerServer,
+      ['organization.subscription.create'],
+      []
+    )
       .then(p => { publisher = p })
   })
   after('Disconnect from RabbitMQ', () => {
