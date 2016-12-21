@@ -31,6 +31,7 @@ describe('#organization.payment-method.added', () => {
     org = {
       id: organizationId,
       allowed: false,
+      isInGracePeriod: false,
       hasPaymentMethod: true
     }
     invoice = {
@@ -86,7 +87,7 @@ describe('#organization.payment-method.added', () => {
         })
     })
 
-    it('should publish the task', () => {
+    it('should publish a subscription create task if the org is post grace period', () => {
       return PayInvoice(validJob)
         .then(() => {
           sinon.assert.calledOnce(publishTaskStub)
@@ -102,8 +103,38 @@ describe('#organization.payment-method.added', () => {
         })
     })
 
-    it('should not publish the task if the org does not have a payment method', () => {
+    it('should publish an invoice pay task if the org is in grace period', () => {
+      org.allowed = true
+      org.isInGracePeriod = true
+      return PayInvoice(validJob)
+        .then(() => {
+          sinon.assert.calledOnce(publishTaskStub)
+          sinon.assert.calledWithExactly(
+            publishTaskStub,
+            'organization.invoice.pay',
+            {
+              invoice: {
+                id: invoice.id
+              },
+              organization: {
+                id: organizationId
+              }
+            }
+          )
+        })
+    })
+
+    it('should not publish any task if the org does not have a payment method', () => {
       org.hasPaymentMethod = false
+      return PayInvoice(validJob)
+        .then(() => {
+          sinon.assert.notCalled(publishTaskStub)
+        })
+    })
+
+    it('should not publish any task if the org is not in the grace period or past it', () => {
+      org.allowed = true
+      org.isInGracePeriod = false
       return PayInvoice(validJob)
         .then(() => {
           sinon.assert.notCalled(publishTaskStub)
