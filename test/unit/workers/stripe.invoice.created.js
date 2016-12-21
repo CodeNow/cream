@@ -25,7 +25,6 @@ describe('#stripe.invoice.created', () => {
   let updatePlanIdForOrganizationBasedOnCurrentUsageStub
   let updateInvoiceWithPaymentMethodOwnerStub
   let getEventStub
-  let payInvoiceStub
   let org = Object.assign({}, OrganizationsFixture[0], { hasPaymentMethod: true })
   let eventId = 'evt_18hnDuLYrJgOrBWzZG8Oz0Rv'
   let invoiceId = 'in_18hkxrLYrJgOrBWzgthSRr9M'
@@ -56,7 +55,6 @@ describe('#stripe.invoice.created', () => {
     updateInvoiceWithPaymentMethodOwnerStub = sinon.stub(stripe.invoices, 'updateWithPaymentMethodOwner').resolves()
     updatePlanIdForOrganizationBasedOnCurrentUsageStub = sinon.stub(stripe.subscriptions, 'updatePlanIdForOrganizationBasedOnCurrentUsage').resolves()
     getEventStub = sinon.stub(stripe, 'getEvent').resolves(stripeEvent)
-    payInvoiceStub = sinon.stub(stripe.invoices, 'pay').resolves()
     publishTaskStub = sinon.stub(rabbitmq, 'publishTask')
   })
   afterEach(() => {
@@ -64,7 +62,6 @@ describe('#stripe.invoice.created', () => {
     updatePlanIdForOrganizationBasedOnCurrentUsageStub.restore()
     updateInvoiceWithPaymentMethodOwnerStub.restore()
     getEventStub.restore()
-    payInvoiceStub.restore()
     publishTaskStub.restore()
   })
 
@@ -161,15 +158,22 @@ describe('#stripe.invoice.created', () => {
         stripeEvent.data.object.paid = true
         return ProcessInvoiceCreated(validJob)
           .then(() => {
-            sinon.assert.notCalled(payInvoiceStub)
+            sinon.assert.notCalled(publishTaskStub)
           })
       })
 
       it('should pay the invoice if not paid and not closed', () => {
         return ProcessInvoiceCreated(validJob)
           .then(() => {
-            sinon.assert.calledOnce(payInvoiceStub)
-            sinon.assert.calledWith(payInvoiceStub, invoiceId)
+            sinon.assert.calledOnce(publishTaskStub)
+            sinon.assert.calledWith(
+              publishTaskStub,
+              'organization.invoice.pay',
+              {
+                invoice: { id: invoiceId },
+                organization: { id: org.id }
+              }
+            )
           })
       })
 
@@ -177,7 +181,7 @@ describe('#stripe.invoice.created', () => {
         stripeEvent.data.object.closed = true
         return ProcessInvoiceCreated(validJob)
           .then(() => {
-            sinon.assert.notCalled(payInvoiceStub)
+            sinon.assert.notCalled(publishTaskStub)
           })
       })
 
@@ -185,7 +189,7 @@ describe('#stripe.invoice.created', () => {
         org.hasPaymentMethod = false
         return ProcessInvoiceCreated(validJob)
           .then(() => {
-            sinon.assert.notCalled(payInvoiceStub)
+            sinon.assert.notCalled(publishTaskStub)
           })
       })
     })
