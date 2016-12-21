@@ -15,7 +15,7 @@ const OrganizationsFixture = require('../../fixtures/big-poppa/organizations')
 const CreateNewSubscriptionForExistingOrganization = require('workers/organization.subscription.create').task
 const CreateNewSubscriptionSchema = require('workers/organization.subscription.create').jobSchema
 
-describe.only('#organization.subscription.create', () => {
+describe('#organization.subscription.create', () => {
   let validJob
   let getOrganizationStub
   let createNewSubscriptionForCustomerWithPaymentMethodStub
