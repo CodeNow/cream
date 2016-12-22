@@ -18,13 +18,16 @@ describe('StripeSubscriptionUtils', function () {
   const githubId = 23423
   const stripeCustomerId = 'cus_905mQ5RdbhTUc1'
   const stripeSubscriptionId = 'sub_23492382378'
+  let users
 
   beforeEach('Create mock for org', () => {
+    users = [{ githubId: 1232 }]
     orgMock = {
       id: orgId,
       githubId: githubId,
       stripeCustomerId: stripeCustomerId,
-      stripeSubscriptionId: stripeSubscriptionId
+      stripeSubscriptionId: stripeSubscriptionId,
+      users
     }
   })
 
@@ -33,11 +36,9 @@ describe('StripeSubscriptionUtils', function () {
     let subscription
     let planId = 'runnable-starter'
     let generateObjectForUsersStub
-    let users
 
     beforeEach('stub out Stripe API calls', () => {
       subscription = {}
-      users = [{ githubId: 1232 }]
       createSubscriptionStub = sinon.stub(stripeClient.subscriptions, 'create').resolves(subscription)
       generateObjectForUsersStub = sinon.spy(StripeSubscriptionUtils, '_getUpdateObjectForUsers')
     })
@@ -272,7 +273,17 @@ describe('StripeSubscriptionUtils', function () {
       return StripeSubscriptionUtils.updatePlanIdForOrganizationBasedOnCurrentUsage(orgMock)
         .then(() => {
           sinon.assert.calledOnce(updateSubscriptionStub)
-          sinon.assert.calledWithExactly(updateSubscriptionStub, stripeSubscriptionId, { plan: planId })
+          sinon.assert.calledWithExactly(
+            updateSubscriptionStub,
+            stripeSubscriptionId,
+            {
+              plan: planId,
+              metadata: {
+                users: sinon.match.string
+              },
+              quantity: 3
+            }
+          )
         })
     })
 
