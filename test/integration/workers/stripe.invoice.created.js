@@ -76,7 +76,7 @@ describe('#stripe.invoice.created Integration Test', () => {
             paymentMethodOwnerGithubId: userGithubId
           }
         }),
-        runnableAPI.getAllInstancesForUserByGithubId(orgGithubId)
+        runnableAPI.getAllNonTestingInstancesForUserByGithubId(orgGithubId)
       ])
     })
     .spread(function createSubscription (stripeCustomer, instances) {

@@ -170,30 +170,30 @@ describe('StripeSubscriptionUtils', function () {
   })
 
   describe('getPlanIdForOrganizationBasedOnCurrentUsage', () => {
-    let getAllInstancesForUserByGithubIdStub
+    let getAllNonTestingInstancesForUserByGithubIdStub
     let orgGithubId
 
     beforeEach('Stub out fetchInstances', () => {
-      getAllInstancesForUserByGithubIdStub = sinon.stub(runnableClient, 'getAllInstancesForUserByGithubId').resolves([])
+      getAllNonTestingInstancesForUserByGithubIdStub = sinon.stub(runnableClient, 'getAllNonTestingInstancesForUserByGithubId').resolves([])
     })
 
     afterEach('Restore fetchInstances', () => {
-      getAllInstancesForUserByGithubIdStub.restore()
+      getAllNonTestingInstancesForUserByGithubIdStub.restore()
     })
 
     it('should fetch the instances from API', () => {
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(() => {
-          sinon.assert.calledOnce(getAllInstancesForUserByGithubIdStub)
+          sinon.assert.calledOnce(getAllNonTestingInstancesForUserByGithubIdStub)
           sinon.assert.calledWithExactly(
-            getAllInstancesForUserByGithubIdStub,
+            getAllNonTestingInstancesForUserByGithubIdStub,
             orgGithubId
           )
         })
     })
 
     it('should return `runnable-starter` if there are 0 instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves([])
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves([])
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -202,7 +202,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should return `runnable-starter` if there are 2 instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves(new Array(2))
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves(new Array(2))
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -211,7 +211,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should return `runnable-standard` if there are 3 instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves(new Array(3))
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves(new Array(3))
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -220,7 +220,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should return `runnable-standard` if there are 7 instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves(new Array(7))
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves(new Array(7))
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -229,7 +229,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should return `runnable-plus` if there are more than 7 instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves(new Array(8))
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves(new Array(8))
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -238,7 +238,7 @@ describe('StripeSubscriptionUtils', function () {
     })
 
     it('should return `runnable-plus` if there are a shit ton of instances', function () {
-      getAllInstancesForUserByGithubIdStub.resolves(new Array(999))
+      getAllNonTestingInstancesForUserByGithubIdStub.resolves(new Array(999))
 
       return StripeSubscriptionUtils.getPlanIdForOrganizationBasedOnCurrentUsage(orgGithubId)
         .then(planId => {
@@ -279,7 +279,8 @@ describe('StripeSubscriptionUtils', function () {
             {
               plan: planId,
               metadata: {
-                users: sinon.match.string
+                users: sinon.match.string,
+                environment: sinon.match.string
               },
               quantity: 3
             }
