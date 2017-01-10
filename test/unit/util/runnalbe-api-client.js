@@ -2,6 +2,7 @@
 
 const Promise = require('bluebird')
 const sinon = require('sinon')
+const expect = require('chai').expect
 require('sinon-as-promised')(Promise)
 
 const runnableClient = require('@runnable/api-client')
@@ -14,7 +15,20 @@ describe('Runnable API Client', () => {
   let instances
 
   beforeEach('Stub out methods', () => {
-    instances = []
+    instances = [
+      {
+        name: 'hello',
+        isTesting: false
+      },
+      {
+        name: 'hello1',
+        isTesting: true
+      },
+      {
+        name: 'hello2',
+        isTesting: false
+      }
+    ]
     loginStub = sinon.stub(runnableClient.prototype, 'githubLogin').yieldsAsync(null)
     logoutStub = sinon.stub(runnableClient.prototype, 'logout').yieldsAsync(null)
     fetchInstancesStub = sinon.stub(runnableClient.prototype, 'fetchInstances').yieldsAsync(null, instances)
@@ -53,10 +67,10 @@ describe('Runnable API Client', () => {
     })
   })
 
-  describe('#getAllInstancesForUserByGithubId', () => {
+  describe('#getAllNonTestingInstancesForUserByGithubId', () => {
     it('should fetch the instances', () => {
       let githubId = 23423
-      return runnableAPI.getAllInstancesForUserByGithubId(githubId)
+      return runnableAPI.getAllNonTestingInstancesForUserByGithubId(githubId)
         .then(() => {
           sinon.assert.calledOnce(fetchInstancesStub)
           sinon.assert.calledWithExactly(
@@ -64,6 +78,14 @@ describe('Runnable API Client', () => {
             { owner: { github: githubId }, masterPod: true },
             sinon.match.func
           )
+        })
+    })
+
+    it('should filter out testing instances', () => {
+      let githubId = 23423
+      return runnableAPI.getAllNonTestingInstancesForUserByGithubId(githubId)
+        .then((instances) => {
+          expect(instances).to.have.lengthOf(2)
         })
     })
   })

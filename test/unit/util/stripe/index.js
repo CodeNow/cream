@@ -294,7 +294,8 @@ describe('Stripe', function () {
               description: `${orgMock.name} ( organizationId: ${orgMock.id}, githubId: ${orgMock.githubId} )`,
               metadata: {
                 organizationId: orgMock.id,
-                githubId: orgMock.githubId
+                githubId: orgMock.githubId,
+                environment: sinon.match.string
               }
             }
           )
@@ -315,7 +316,8 @@ describe('Stripe', function () {
               coupon: couponName,
               metadata: {
                 organizationId: orgMock.id,
-                githubId: orgMock.githubId
+                githubId: orgMock.githubId,
+                environment: sinon.match.string
               }
             }
           )
