@@ -167,7 +167,7 @@ describe('#stripe.invoice.created Integration Test', () => {
         // It should have changed the plan
         expect(stripeSubscription.plan.id).to.not.equal(planId)
         expect(stripeSubscription.status).to.equal('active')
-        expect(+stripeSubscription.current_period_end).to.be.above(+moment().format('X'))
+        expect(parseInt(stripeSubscription.current_period_end, 10)).to.be.above(parseInt(moment().format('X'), 10))
       })
   })
 
