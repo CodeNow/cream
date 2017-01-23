@@ -4,6 +4,7 @@ require('loadenv')()
 const Promise = require('bluebird')
 const sinon = require('sinon')
 const expect = require('chai').expect
+const moment = require('moment')
 
 const MockAPI = require('mehpi')
 const bigPoppaAPI = new MockAPI('5678')
@@ -165,6 +166,8 @@ describe('#stripe.invoice.created Integration Test', () => {
         expect(stripeSubscription).to.have.deep.property('plan.id')
         // It should have changed the plan
         expect(stripeSubscription.plan.id).to.not.equal(planId)
+        expect(stripeSubscription.status).to.equal('active')
+        expect(+stripeSubscription.current_period_end).to.be.above(+moment().format('X'))
       })
   })
 
