@@ -278,6 +278,7 @@ describe('StripeSubscriptionUtils', function () {
             stripeSubscriptionId,
             {
               plan: planId,
+              trial_end: 'now',
               metadata: {
                 users: sinon.match.string,
                 environment: sinon.match.string
