@@ -94,6 +94,18 @@ describe('StripeSubscriptionUtils', function () {
         })
     })
 
+    it('should throw a validation error if', done => {
+      let thrownErr = new Error('hello')
+      thrownErr.type = 'StripeCardError'
+      createSubscriptionStub.rejects(thrownErr)
+
+      StripeSubscriptionUtils.createSubscription(stripeCustomerId, users, planId)
+        .asCallback(err => {
+          expect(err).to.be.an.instanceof(ValidationError)
+          done()
+        })
+    })
+
     it('should throw any errors', done => {
       let thrownErr = new Error('hello')
       createSubscriptionStub.rejects(thrownErr)
