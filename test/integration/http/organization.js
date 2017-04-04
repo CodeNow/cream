@@ -130,7 +130,7 @@ describe('OrganizationRouter Integration Test', () => {
     })
   })
 
-  describe('#getPaymentMethod', () => {
+  describe.only('#getPaymentMethod', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     const orgId = org.id
     let stripeCustomerId
