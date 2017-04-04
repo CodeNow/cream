@@ -87,13 +87,11 @@ module.exports = class TestUtil {
   }
 
   static createCustomerAndSubscription (org, opts) {
-    console.log('createCustomer')
     if (!opts) opts = {}
     return stripe.stripeClient.customers.create({
       description: `Customer for organizationId: ${org.id} / githubId: ${org.githubId}`
     })
     .then(stripeCustomer => {
-      console.log('customer', stripeCustomer)
       org.stripeCustomerId = stripeCustomer.id
       const updates = {
         customer: org.stripeCustomerId,
@@ -104,7 +102,6 @@ module.exports = class TestUtil {
       }
       return stripe.stripeClient.subscriptions.create(updates)
       .then(stripeSubscription => {
-        console.log('subscription', stripeSubscription)
         org.stripeSubscriptionId = stripeSubscription.id
         return Promise.props({
           customer: stripeCustomer,

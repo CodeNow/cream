@@ -28,7 +28,7 @@ const stripe = require('util/stripe')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe('OrganizationRouter Integration Test', () => {
+describe.only('OrganizationRouter Integration Test', () => {
   let publisher
   let cardNumber = '4242424242424242'
   let cardExpMonth = 12
@@ -130,7 +130,7 @@ describe('OrganizationRouter Integration Test', () => {
     })
   })
 
-  describe.only('#getPaymentMethod', () => {
+  describe('#getPaymentMethod', () => {
     let org = Object.assign({}, OrganizationWithStripeCustomerIdFixture)
     const orgId = org.id
     let stripeCustomerId
