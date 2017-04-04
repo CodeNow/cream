@@ -108,7 +108,6 @@ module.exports = class TestUtil {
           subscription: stripeSubscription
         })
       })
-      .catch(console.log)
     })
   }
 

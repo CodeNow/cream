@@ -9,7 +9,6 @@ const express = require('express')
 
 const runnableAPI = require('util/runnable-api-client')
 const stripeClient = require('util/stripe/client')
-const stripe = require('util/stripe')
 const bigPoppa = require('util/big-poppa')
 
 const HealthRouter = require('http/routes/health')
@@ -58,9 +57,9 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             message: sinon.match.string,
-             isHealthy: true,
-             services: sinon.match.any
+            message: sinon.match.string,
+            isHealthy: true,
+            services: sinon.match.any
           })
         })
     })
@@ -73,9 +72,9 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             message: sinon.match.string,
-             isHealthy: false,
-             services: sinon.match.any
+            message: sinon.match.string,
+            isHealthy: false,
+            services: sinon.match.any
           })
         })
     })
@@ -88,7 +87,7 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 500)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             err: sinon.match.any
+            err: sinon.match.any
           })
         })
     })
@@ -128,9 +127,9 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             message: sinon.match.string,
-             isHealthy: true,
-             services: sinon.match.any
+            message: sinon.match.string,
+            isHealthy: true,
+            services: sinon.match.any
           })
         })
     })
@@ -143,9 +142,9 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             message: sinon.match.string,
-             isHealthy: false,
-             services: sinon.match.any
+            message: sinon.match.string,
+            isHealthy: false,
+            services: sinon.match.any
           })
         })
     })
@@ -158,7 +157,7 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 500)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-             err: sinon.match.any
+            err: sinon.match.any
           })
         })
     })
@@ -334,5 +333,4 @@ describe('HTTP /organization', () => {
       expect(response).to.eql({ serviceName: name, isHealthy: false, error: {} })
     })
   })
-
 })

@@ -28,7 +28,7 @@ const stripe = require('util/stripe')
 const workerServer = require('workers/server')
 const httpServer = require('http/server')
 
-describe.only('OrganizationRouter Integration Test', () => {
+describe('OrganizationRouter Integration Test', () => {
   let publisher
   let cardNumber = '4242424242424242'
   let cardExpMonth = 12
