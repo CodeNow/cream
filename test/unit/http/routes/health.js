@@ -57,7 +57,6 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-            message: sinon.match.string,
             isHealthy: true,
             services: sinon.match.any
           })
@@ -72,7 +71,6 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-            message: sinon.match.string,
             isHealthy: false,
             services: sinon.match.any
           })
@@ -127,7 +125,6 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-            message: sinon.match.string,
             isHealthy: true,
             services: sinon.match.any
           })
@@ -142,7 +139,6 @@ describe('HTTP /organization', () => {
           sinon.assert.calledWith(responseStub.status, 200)
           sinon.assert.calledOnce(responseStub.json)
           sinon.assert.calledWith(responseStub.json, {
-            message: sinon.match.string,
             isHealthy: false,
             services: sinon.match.any
           })
