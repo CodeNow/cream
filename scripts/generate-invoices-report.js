@@ -13,8 +13,8 @@ if (!process.env.STRIPE_API_KEY) {
 
 const stripeClient = require('stripe')(process.env.STRIPE_API_KEY)
 
-const recursiveGet = (charges, starting_after, page) => {
-  return stripeClient.charges.list({ limit: 100, starting_after: starting_after || undefined })
+const recursiveGet = (charges, startingAfter, page) => {
+  return stripeClient.charges.list({ limit: 100, starting_after: startingAfter || undefined })
   .then((response) => {
     charges = charges.concat(response.data.map(x => x.invoice))
     console.log('Fetching charges page...', page)
@@ -46,6 +46,7 @@ recursiveGet([], undefined, 1)
     invoices = invoices.filter(invoice => {
       return invoice.total > 0 && !!invoice.paid
     })
+    const titles = ['Date', 'Stripe Customer ID', 'Customer Name', 'Plan', 'User Count', 'Subtotal', 'Total amount paid', 'Dicsount', 'Users']
     const result = invoices.reduce((result, invoice) => {
       const coupon = keypather.get(invoice, 'discount.coupon.id')
       const plan = keypather.get(invoice, 'lines.data[0].plan.name')
@@ -62,7 +63,7 @@ recursiveGet([], undefined, 1)
         coupon,
         users
       ]])
-    }, [['Date', 'Stripe Customer ID', 'Customer Name', 'Plan', 'User Count', 'Subtotal', 'Total amount paid', 'Dicsount', 'Users']])
+    }, [titles])
     return Promise.fromCallback(cb => csvStringify(result, cb))
   })
   .then(csvString => {
