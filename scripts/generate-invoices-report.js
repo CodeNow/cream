@@ -2,21 +2,33 @@
 const Promise = require('bluebird')
 const csvStringify = require('csv-stringify')
 const keypather = require('keypather')()
-const BigPoppaClient = require('@runnable/big-poppa-client')
 const fs = Promise.promisifyAll(require('fs'))
-
-const bigPoppa = new BigPoppaClient('localhost:7788') // Setup an ssh tunnel
+const GitHub = require('github')
+const moment = require('moment')
 
 if (!process.env.STRIPE_API_KEY) {
   throw new Error('An environment variable with STRIPE_API_KEY must be defined')
 }
 
 const stripeClient = require('stripe')(process.env.STRIPE_API_KEY)
+const github = new GitHub({
+  version: '3.0.0',
+  timeout: 5000,
+  requestMedia: 'application/json',
+  headers: {
+    'user-agent': process.env.APP_NAME
+  }
+})
+
+github.authenticate({
+  type: 'oauth',
+  token: process.env.GITHUB_TOKEN
+})
 
 const recursiveGet = (charges, startingAfter, page) => {
   return stripeClient.charges.list({ limit: 100, starting_after: startingAfter || undefined })
   .then((response) => {
-    charges = charges.concat(response.data.map(x => x.invoice))
+    charges = charges.concat(response.data.filter(x => !!x.captured).map(x => x.invoice))
     console.log('Fetching charges page...', page)
     let last = response.data[response.data.length - 1]
     if (response.data.length < 100) {
@@ -32,30 +44,43 @@ recursiveGet([], undefined, 1)
     console.log('Charges fetched. Fetching invoices...')
     let count = 0
     return Promise.map(invoiceIds, invoiceId => {
+      console.log('Invoice id', invoiceId)
       return stripeClient.invoices.retrieve(invoiceId)
         .tap(() => console.log('Fetched invoice...', count++))
     })
   })
   .map(invoice => {
-    console.log('Invoices fetched...')
-    return bigPoppa.getOrganizations({ stripeCustomerId: invoice.customer })
-      .then(org => Object.assign(invoice, { organizationName: org[0].name }))
+    console.log('Fetching organization name...')
+    return stripeClient.customers.retrieve(invoice.customer)
+    .then(customer => {
+      const githubId = customer.metadata.githubId
+      invoice.githubId = githubId
+      return Promise.fromCallback(cb => {
+        github.users.getById({ id: githubId }, cb)
+      })
+    })
+    .then(res => Object.assign(invoice, { githubOrg: res.data }))
   })
   .then(invoices => {
     console.log('Org names fetched...')
-    invoices = invoices.filter(invoice => {
-      return invoice.total > 0 && !!invoice.paid
-    })
-    const titles = ['Date', 'Stripe Customer ID', 'Customer Name', 'Plan', 'User Count', 'Subtotal', 'Total amount paid', 'Dicsount', 'Users']
+    invoices = invoices
+      .filter(invoice => {
+        return invoice.total > 0 && !!invoice.paid
+      })
+      .sort((a, b) => a.date - b.date)
+    const titles = ['Date', 'Invoice Id', 'Stripe Customer ID', 'Github ID', 'Customer Name', 'Plan', 'User Count', 'Subtotal', 'Total amount paid', 'Dicsount', 'Users']
     const result = invoices.reduce((result, invoice) => {
+      const date = moment(invoice.date, 'X').format('MMM/DDD/YYYY')
       const coupon = keypather.get(invoice, 'discount.coupon.id')
       const plan = keypather.get(invoice, 'lines.data[0].plan.name')
       const userQuantity = keypather.get(invoice, 'lines.data[0].quantity')
       const users = keypather.get(invoice, 'lines.data[0].metadata.users')
       return result.concat([[
-        invoice.date,
+        date,
+        invoice.id,
         invoice.customer,
-        invoice.organizationName,
+        invoice.githubId,
+        invoice.githubOrg.login,
         plan, // plan
         userQuantity,
         invoice.subtotal, // total

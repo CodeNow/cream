@@ -45,3 +45,4 @@ coverage
 coverage-unit
 coverage-functional
 coverage-integration
+scripts/*.csv
