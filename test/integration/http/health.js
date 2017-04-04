@@ -20,7 +20,6 @@ describe('Health Integration Test', () => {
       .get(`http://localhost:${process.env.PORT}/health`)
       .then(res => {
         expect(res.status).to.equal(200)
-        expect(res.text).to.match(/always.*sunny.*philadelphia/i)
       })
   })
 })

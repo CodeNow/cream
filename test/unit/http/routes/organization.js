@@ -36,7 +36,7 @@ describe('HTTP /organization', () => {
     })
   })
 
-  describe('#getInvoices', () => {
+  describe('#getHealthStatus', () => {
     let requestStub
     let getOrganizationStub
     let getInvoicesStub
