@@ -26,7 +26,7 @@ github.authenticate({
 })
 
 const recursiveGet = (charges, startingAfter, page) => {
-  return stripeClient.charges.list({ limit: 100, starting_after: startingAfter || undefined })
+  return stripeClient.charges.list({ limit: 100, starting_after: startingAfter })
   .then((response) => {
     charges = charges.concat(response.data.filter(x => !!x.captured))
     console.log('Fetching charges page...', page)
