@@ -55,7 +55,6 @@
     "bunyan": "^1.8.1",
     "error-cat": "^3.0.0",
     "express": "^4.14.0",
-    "github": "^9.2.0",
     "joi": "^9.0.4",
     "keypather": "^2.0.0",
     "loadenv": "^2.2.0",
@@ -68,6 +67,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "csv-stringify": "^1.0.4",
+    "github": "^9.2.0",
     "istanbul": "^0.4.5",
     "mehpi": "git+ssh://git@github.com:runnable/mehpi#v2.0.0",
     "mocha": "^2.5.3",

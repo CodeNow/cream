@@ -1,17 +1,11 @@
 ### What this PR does
 
-* I removed this function
-* 
+* _I removed this function_
 * 
 
 ### Dependencies
 
-- [ ] list dependencies (eg, PR from another branch or repo; tags or versions required prior to deployment)
-
-### Reviewers
-
-- [ ] person_1
-- [ ] person_2
+- [ ] List dependencies (eg, PR from another branch or repo; tags or versions required prior to deployment)
 
 ### Tests
 
