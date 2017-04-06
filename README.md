@@ -34,3 +34,16 @@ There are three types of tests in this project:
 
 1. Use khronos time.passed: https://github.com/CodeNow/cream/issues/55
 1. Change source of truth for data to be an internal database (away from Stripe): https://github.com/CodeNow/cream/issues/56
+
+## Reports
+
+### Invoice Reports
+
+In order to generate invoice reports, you need a stripe live api key (found in Stripe site) and a github token.
+Then all you need to do is run this scripts with the following parameters:
+
+```
+STRIPE_API_KEY=??? GITHUB_TOKEN=??? node scripts/generate-invoices-report.js
+```
+
+This will generate a CSV file in the `scripts` directory with your CSV.

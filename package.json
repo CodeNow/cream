@@ -66,6 +66,8 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "csv-stringify": "^1.0.4",
+    "github": "^9.2.0",
     "istanbul": "^0.4.5",
     "mehpi": "git+ssh://git@github.com:runnable/mehpi#v2.0.0",
     "mocha": "^2.5.3",
