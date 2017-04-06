@@ -28,7 +28,7 @@ github.authenticate({
 const recursiveGet = (charges, startingAfter, page) => {
   return stripeClient.charges.list({ limit: 100, starting_after: startingAfter || undefined })
   .then((response) => {
-    charges = charges.concat(response.data.filter(x => !!x.captured).map(x => x.invoice))
+    charges = charges.concat(response.data.filter(x => !!x.captured))
     console.log('Fetching charges page...', page)
     let last = response.data[response.data.length - 1]
     if (response.data.length < 100) {
@@ -40,51 +40,65 @@ const recursiveGet = (charges, startingAfter, page) => {
 
 console.log('Fetching charges...')
 recursiveGet([], undefined, 1)
-  .then(invoiceIds => {
+  .then(charges => {
     console.log('Charges fetched. Fetching invoices...')
-    let count = 0
-    return Promise.map(invoiceIds, invoiceId => {
-      console.log('Invoice id', invoiceId)
+    return Promise.map(charges, (charge, i, total) => {
+      const invoiceId = charge.invoice
       return stripeClient.invoices.retrieve(invoiceId)
-        .tap(() => console.log('Fetched invoice...', count++))
+        .tap(() => console.log(`Fetched invoice ${invoiceId}... ${i} of ${total}`))
+        .then(invoice => {
+          invoice.charge = charge
+          return invoice
+        })
     })
   })
-  .map(invoice => {
-    console.log('Fetching organization name...')
-    return stripeClient.customers.retrieve(invoice.customer)
-    .then(customer => {
-      const githubId = customer.metadata.githubId
-      invoice.githubId = githubId
-      return Promise.fromCallback(cb => {
-        github.users.getById({ id: githubId }, cb)
+  .tap(() => console.log('Finished fetching invoices.'))
+  .then(invoices => {
+    return Promise.mapSeries(invoices, (invoice, i, total) => {
+      return stripeClient.customers.retrieve(invoice.customer)
+      .then(customer => {
+        const githubId = customer.metadata.githubId
+        invoice.githubId = githubId
+        return Promise.fromCallback(cb => {
+          github.users.getById({ id: githubId }, cb)
+        })
       })
+      .tap(() => console.log(`Fetched organization name... ${i} of ${total}`))
+      .then(res => Object.assign(invoice, { githubOrg: res.data }))
     })
-    .then(res => Object.assign(invoice, { githubOrg: res.data }))
   })
+  .tap(() => console.log('Finished fetching organization names.'))
   .then(invoices => {
     console.log('Org names fetched...')
     invoices = invoices
-      .filter(invoice => {
-        return invoice.total > 0 && !!invoice.paid
-      })
+      .filter(invoice => invoice.total > 0 && !!invoice.paid)
       .sort((a, b) => a.date - b.date)
-    const titles = ['Date', 'Invoice Id', 'Stripe Customer ID', 'Github ID', 'Customer Name', 'Plan', 'User Count', 'Subtotal', 'Total amount paid', 'Dicsount', 'Users']
+    const titles = [
+      'Date', 'Invoice Id', 'Stripe Customer ID',
+      'Github ID', 'Customer Name', 'Plan', 'User Count',
+      'Subtotal', 'Total amount paid', 'Refunded',
+      'Dicsount', 'Users'
+    ]
     const result = invoices.reduce((result, invoice) => {
-      const date = moment(invoice.date, 'X').format('MMM/DDD/YYYY')
+      const date = moment(invoice.date, 'X').format('MM/DD/YYYY')
       const coupon = keypather.get(invoice, 'discount.coupon.id')
       const plan = keypather.get(invoice, 'lines.data[0].plan.name')
       const userQuantity = keypather.get(invoice, 'lines.data[0].quantity')
       const users = keypather.get(invoice, 'lines.data[0].metadata.users')
+      const subtotal = invoice.subtotal / 100
+      const total = invoice.total / 100
+      const refunded = keypather.get(invoice, 'charge.refunded') ? 'Yes' : ''
       return result.concat([[
         date,
         invoice.id,
         invoice.customer,
         invoice.githubId,
         invoice.githubOrg.login,
-        plan, // plan
+        plan,
         userQuantity,
-        invoice.subtotal, // total
-        invoice.total, // total
+        subtotal,
+        total,
+        refunded,
         coupon,
         users
       ]])
@@ -98,5 +112,6 @@ recursiveGet([], undefined, 1)
     console.log(`Done. CSV save to ${fileName}`)
   })
   .catch(err => {
-    console.log('ERR', err)
+    console.error(`Error Generating File: ${err.message}`)
+    process.exit(1)
   })
