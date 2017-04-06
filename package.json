@@ -16,7 +16,8 @@
     "test-integration-slow": "RUN_SLOW_TESTS=true NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
     "start-worker": "NODE_PATH=./lib node lib/workers",
     "start-http": "NODE_PATH=./lib node lib/http",
-    "migrate-organizations": "NODE_PATH=./lib node scripts/migrate-organizations"
+    "migrate-organizations": "NODE_PATH=./lib node scripts/migrate-organizations",
+    "clean-up-unused-stripe-customers": "NODE_PATH=./lib node scripts/clean-up-stripe-customers"
   },
   "repository": {
     "type": "git",
