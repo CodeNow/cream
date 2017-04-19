@@ -18,15 +18,21 @@ describe('Runnable API Client', () => {
     instances = [
       {
         name: 'hello',
-        isTesting: false
+        attrs: {
+          isTesting: false
+        }
       },
       {
         name: 'hello1',
-        isTesting: true
+        attrs: {
+          isTesting: true
+        }
       },
       {
         name: 'hello2',
-        isTesting: false
+        attrs: {
+          isTesting: false
+        }
       }
     ]
     loginStub = sinon.stub(runnableClient.prototype, 'githubLogin').yieldsAsync(null)
