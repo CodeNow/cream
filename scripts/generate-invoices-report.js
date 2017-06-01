@@ -71,10 +71,16 @@ recursiveGet([], undefined, 1)
       })
     })
   })
+  .catch(err => {
+    console.log('Error getting org names')
+    throw new Error(`Error getting org names (${err})`)
+  })
   .tap(() => console.log('Finished fetching organization names.'))
   .then(invoices => {
     console.log('Org names fetched...')
     invoices = invoices
+      .filter(invoice => !!invoice)
+      .filter(invoice => !!invoice.total)
       .filter(invoice => invoice.total > 0 && !!invoice.paid)
       .sort((a, b) => a.date - b.date)
     const titles = [
