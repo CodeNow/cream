@@ -104,7 +104,9 @@ describe('#organization.subscription.create', () => {
           sinon.assert.calledTwice(publishEventStub)
           sinon.assert.calledWith(publishEventStub, 'organization.allowed', {
             id: org.id,
-            githubId: org.githubId
+            githubId: org.githubId,
+            orgId: org.id,
+            isPersonalAccount: false
           })
           sinon.assert.calledWith(publishEventStub, 'organization.subscription.created', {
             organization: {

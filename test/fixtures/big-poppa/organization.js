@@ -13,5 +13,6 @@ module.exports = {
   isPastTrial: true,
   isPastActivePeriod: true,
   isPastGracePeriod: true,
+  isPersonalAccount: false,
   allowed: false
 }

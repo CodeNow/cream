@@ -14,6 +14,7 @@ module.exports = {
   users: [ { id: 76, githubId: 1981198 } ],
   isPastTrial: false,
   isPastActivePeriod: true,
+  isPersonalAccount: false,
   isPastGracePeriod: false,
   allowed: true
 }
