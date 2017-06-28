@@ -1,0 +1,19 @@
+version: '2'
+services:
+  cream:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - NODE_ENV=test
+    command: sleep 999999
+    links:
+      - rabbit
+    environment:
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_HOSTNAME=rabbit
+
+  rabbit:
+    image: rabbitmq:3.4.3-management

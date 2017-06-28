@@ -69,7 +69,7 @@
     "csv-stringify": "^1.0.4",
     "github": "^9.2.0",
     "istanbul": "^0.4.5",
-    "mehpi": "git+ssh://git@github.com:runnable/mehpi#v2.0.0",
+    "mehpi": "https://github.com/runnable/mehpi#v2.0.0",
     "mocha": "^2.5.3",
     "request-promise": "^4.1.1",
     "sinon": "^1.17.5",
