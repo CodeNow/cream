@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - NODE_ENV=test
-    command: sleep 999999
+    command: npm test
     ports:
      - "80:80"
     links:

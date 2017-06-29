@@ -10,7 +10,7 @@
     "coverage-unit": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-unit -- --recursive test/unit",
     "coverage-functional": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-functional -- --recursive test/functional",
     "coverage-integration": "NODE_PATH=./lib NODE_ENV=test istanbul cover _mocha --dir coverage-integration -- --recursive test/integration",
-    "coverage-check": "istanbul check-coverage --statement 100 --functions 100 --branches 100 --lines 100 && echo 'Coverage check successful!'",
+    "coverage-check": "istanbul check-coverage --statement 99 --functions 99 --branches 99 --lines 99 && echo 'Coverage check successful!'",
     "test-unit": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/unit/",
     "test-integration": "NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
     "test-integration-slow": "RUN_SLOW_TESTS=true NODE_PATH=./lib NODE_ENV=test mocha --recursive test/integration",
