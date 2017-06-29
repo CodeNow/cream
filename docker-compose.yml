@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    command: npm test
+    command: sleep 99999
     ports:
      - "80:80"
     links:
