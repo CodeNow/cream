@@ -7,13 +7,17 @@ services:
     environment:
       - NODE_ENV=test
     command: sleep 999999
+    ports:
+     - "80:80"
     links:
       - rabbit
     environment:
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
       - RABBITMQ_HOSTNAME=rabbit
 
   rabbit:
-    image: rabbitmq:3.4.3-management
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbit
+    ports:
+     - "5672:5672"
+     - "15672:15672"
