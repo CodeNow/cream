@@ -1,0 +1,21 @@
+FROM node:4.2.1
+
+RUN apt-get update && apt-get install vim -y
+
+ENV NPM_TOKEN=c0c4b32a-3de5-4e27-9d32-56c1616746d8
+
+RUN npm install npm@2.8.3 -g
+
+# Add package.json from the current build context (`.` is the repo) second
+ADD ./package.json /app/package.json
+
+# install, should will skip if no package.json change
+WORKDIR /app
+RUN echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+RUN npm install
+
+# move the current build context (`.` is the repo) to /app
+ADD . /app
+
+# Define default command.
+CMD /usr/local/bin/npm run test

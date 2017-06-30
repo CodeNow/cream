@@ -1,0 +1,22 @@
+version: '2'
+services:
+  cream:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: npm test -- --timeout 20000
+    ports:
+     - "80:80"
+    links:
+      - rabbit
+    environment:
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit
+
+  rabbit:
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbit
+    ports:
+     - "5672:5672"
+     - "15672:15672"
