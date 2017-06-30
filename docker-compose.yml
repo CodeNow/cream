@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    command: sleep 99999
+    command: npm test -- --timeout 20000
     ports:
      - "80:80"
     links:
